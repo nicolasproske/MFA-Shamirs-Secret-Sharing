@@ -1,11 +1,19 @@
 % Praeamble
-\documentclass[conference,a4paper]{IEEEtran}
+\documentclass[conference,10pt,a4paper]{IEEEtran}
 
 \usepackage[T1]{fontenc}
 \usepackage[ansinew]{inputenc}
 \usepackage[ngerman]{babel}
 \usepackage{lipsum} % Zum Generieren von Blindtext
 \usepackage{csquotes} % Anführungszeichen
+
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\usepackage{graphicx}
+
+\usepackage{hyperref}
+\usepackage[figure]{hypcap}
 
 \renewcommand\IEEEkeywordsname{Schlüsselwörter}
 \def\code#1{\texttt{#1}}
@@ -18,13 +26,14 @@
 \begin{document}
 
 % Angaben
-\title{Studienarbeit}
+\title{Analyse und Implementierung einer Multi-Faktor-Authentifizierung mit Shamir Secret Sharing}
 \author{
 	\IEEEauthorblockN{Nicolas Proske}
 	\IEEEauthorblockA{
 		\textit{Ostbayerische Technische Hochschule Amberg-Weiden} \\
 		Moderne Anwendungen der Kryptographie \\
-		E-Mail: \code{n.proske@oth-aw.de}
+		E-Mail: \code{n.proske@oth-aw.de} \\
+		Matr.-Nr.: \code{87672270}
 	}
 }
 
@@ -37,7 +46,7 @@
 
 % Schluesselwoerter
 \begin{IEEEkeywords}
-component, formatting, style, styling, insert
+MFA, Secret Sharing
 \end{IEEEkeywords}
 
 \input{chapters/Einleitung}

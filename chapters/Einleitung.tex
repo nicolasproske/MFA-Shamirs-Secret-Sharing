@@ -1,2 +1,90 @@
 \section{Einleitung}
-\lipsum[1] \autocite{sample-2023}
+In der heutigen digitalen Welt, in der eine überwältigende Menge an Daten generiert, gespeichert und über verschiedene Plattformen übertragen wird, ist der Bedarf an Datenschutz und Datensicherheit relevanter denn je. Die mit der Digitalisierung einhergehenden Möglichkeiten bergen ein erhebliches Risiko für Datendiebstahl, unbefugten Zugriff und Cyberangriffe. Obwohl laut einer Umfrage \autocite[S. 23]{gen-insights-2023} die Hälfte der Erwachsenen weltweit glauben, dass die von ihnen ergriffenen Maßnahmen ausreichen, um sich gegen Identitätsdiebstahl zu schützen, sind 63 Prozent darüber besorgt, dass ihre Identität gestohlen wird. Weiter fühlen sich knapp sieben von zehn Menschen heute anfälliger für Identitätsdiebstahl als noch vor ein paar Jahren. Ein wesentlicher Grund für die Zunahme von Identitätsdiebstahl liegt neben zu schwachen Passwörtern hauptsächlich daran, wie Menschen damit umgehen. Bei einer Frage bezüglich der mehrmaligen Verwendung derselben Benutzernamen und Passwörter haben 82 Prozent zugegeben, zumindest manchmal dieselben Anmeldedaten für unterschiedliche Konten zu verwenden. Knapp die Hälfte davon, etwa 45 Prozent, verwenden sogar immer oder in den meisten Fällen dieselben Zugangsdaten \autocite[S. 12]{ibm-security-2021}.
+
+\subsection{Ein-Faktor-Authentifizierung}
+Lange Zeit haben Authentifizierungsmethoden auf einem einzelnen Identifikationsfaktor beruht, in der Regel einer Kombination aus Benutzername und Passwort. Wenn diese beiden Parameter über mehrere Dienste hinweg identisch sind, bedeutet dies, dass ein Angreifer, der ein einziges Konto kompromittiert, automatisch Zugriff auf die anderen Konten erhält \textemdash{} Dabei spielt die Stärke des Passworts keine Rolle. Dieser One-Factor-Authentication-Ansatz (OFA) hat jahrzehntelang das Rückgrat der Informationssicherheit gebildet. Dennoch hat sich angesichts der zunehmenden Komplexität von Cyberbedrohungen gezeigt, dass die Abhängigkeit von einem einzigen Faktor für die Authentifizierung eine Schwachstelle darstellt, die anfällig für verschiedene Verletzungen wie Brute-Force-Angriffe, Phishing und Keylogging ist. Diese Schwachstellen verdeutlichen, dass OFA für heutige Anwendungsfälle in aller Regel keine ausreichende Sicherheit mehr bietet.
+
+\subsection{Mehrfaktor-Authentifizierung}
+Multi-Factor-Authentication (MFA) stellt einen signifikanten Fortschritt in der Evolution der digitalen Sicherheitsmaßnahmen dar. Im Gegensatz zur Einzelfaktor-Authentifizierung, die üblicherweise auf einer einzigen Form des Nachweises wie einem Passwort basiert, erhöht MFA die Sicherheit durch zusätzliche Schutzebenen, indem mehrere unabhängige Zugangsdaten für die Authentifizierung erforderlich sind. Diese Zugangsdaten können in drei Hauptkategorien eingeteilt werden:
+
+\begin{enumerate}
+	\item \textit{Wissen}: Informationen, die der Benutzer kennt, wie Passwörter, PINs und Antworten auf geheime Fragen.
+  	\item \textit{Besitz}: Gegenstände oder Geräte, die der Benutzer besitzt, wie Smartphones, Chipkarten oder physische Schlüssel. Die Bestätigung des Besitzes kann verschiedene Formen annehmen, angefangen von der Entgegennahme und Eingabe eines per SMS an eine registrierte Telefonnummer gesendeten Codes bis hin zum Einsetzen eines physischen Schlüssels in ein Schloss.
+  	\item \textit{Eigenheit}: Biologische Merkmale, die einzigartig für den Benutzer sind, wie Fingerabdrücke, Netzhautmuster oder Gesichtserkennung.
+\end{enumerate}
+
+Der Hauptvorteil von MFA gegenüber OFA liegt daher im schichtbasierten Ansatz. Selbst wenn ein Angreifer es schafft, einen Authentifizierungsfaktor zu umgehen, bieten die verbleibenden Faktoren weiterhin Schutz. Eine Kompromittierung eines Faktors gefährdet also nicht die Gesamtsicherheit. Trotz der Stärken bringt eine MFA auch eigene Herausforderungen mit sich, wie beispielsweise die potenziell erhöhte Komplexität und die Notwendigkeit für Benutzer, mehrere Authentifizierungsfaktoren zu verwalten. Dennoch überwiegen die Vorteile der MFA oft diese potenziellen Nachteile, insbesondere in Umgebungen, in denen der Schutz sensibler Daten oberste Priorität hat.
+
+\subsection{Shamirs Secret Sharing}
+Shamirs Secret Sharing (SSS) ist ein kryptographischer Algorithmus, der am 1. November 1979 von Adi Shamir veröffentlicht wurde \autocite{shamir-secretsharing-1979}. Es handelt sich um eine Methode, die die Aufteilung eines Geheimnisses in mehrere Teile, sogenannte Shares, ermöglicht. Jeder einzelne Share ist für sich genommen bedeutungslos und kann keinerlei Informationen über das ursprüngliche Geheimnis preisgeben. Wenn jedoch eine ausreichende Anzahl von Shares kombiniert wird, kann das Geheimnis rekonstruiert werden.\par
+
+Shamirs Secret Sharing basiert auf dem Prinzip der Polynominterpolation in endlichen Körpern, wobei \( k \) Punkte ein Polynom vom Grad \( k - 1 \) eindeutig definieren. Das (k, n)-Schwellenwertschema legt fest, wie viele \( k \) Shares benötigt werden, um das Geheimnis zu rekonstruieren, \( n \) ist größer \( k \) und bezieht sich auf die Gesamtzahl der Shares, in die das Geheimnis aufgeteilt wird.\par
+
+Um dies anhand eines mathematischen Beispiels zu veranschaulichen, wird im Folgenden ein (2, 3)-Schwellenschema mit \( k = 2 \) und \( n = 3 \) betrachtet, bei dem das Geheimnis \( S \) der Zahl \( 42 \) entspricht. Sei \( p = 43 \) eine Primzahl mit \( p > S \). Alle Berechnungen erfolgen im endlichen Körper \( GF(p) \). Der erste Schritt besteht darin, ein Polynom vom Grad \( k - 1 = 2 - 1 = 1 \) aufzustellen:
+
+\begin{equation*}
+f(x) = mx + b \mod{p}
+\end{equation*}
+
+Die Konstante \( b \) entspricht dabei dem Geheimnis \( S \). Aus Gründen der Übersichtlichkeit wird in diesem Beispiel \( m = 4 \) gewählt:
+
+\begin{equation*}
+f(x) = 4x + 42 \mod{43}
+\end{equation*}
+
+Im nächsten Schritt erfolgt die Berechnung von \( n \) Punkten in der Ebene. Dazu wird für \( x = 1...n \) eingesetzt:
+
+\begin{equation*}
+\begin{aligned}
+&\text{Für } x = 1: y_1 = f(1) = 4*1 + 42 \mod{43} = 3 \\
+&\text{Für } x = 2: y_2 = f(2) = 4*2 + 42 \mod{43} = 7 \\
+&\text{Für } x = 3: y_3 = f(3) = 4*3 + 42 \mod{43} = 11
+\end{aligned}
+\end{equation*}
+
+\autoref{fig:abb1} zeigt alle berechneten Punkte \( (1, 3), (2, 7), (3, 11) \), welche auf der durch das Polynom \( f(x) = 4x + 42 \mod{43} = 4x - 1 \) definierten Gerade liegen. Jeder Punkt \( (x_i, y_i) \) repräsentiert dabei einen Share.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    title={Polynomdarstellung von $f(x) = 4x + 42 \mod{43}$},
+    axis lines = middle,
+    enlargelimits = true,
+    xlabel={x},
+    ylabel={y},
+    xmin=0, xmax=3,
+    ymin=-1, ymax=11,
+    xtick={0,1,2,3},
+    ytick={-1,0,3,7,11},
+    legend style={at={(0.7,0.5)}, anchor=west},
+    ymajorgrids=true,
+    xmajorgrids=true,
+    grid style=dashed,
+]
+\addplot[
+    color=blue,
+    mark=none,
+    domain=-1:4,
+    samples=100,
+]
+{4*x - 1};
+\addlegendentry{$f(x)$}
+\addplot[
+    only marks,
+    mark=*,
+    mark options={fill=red},
+]
+coordinates {
+    (1,3)(2,7)(3,11)
+};
+\addlegendentry{$(x_i,y_i)$}
+\node[label={0:{$(0,S)$}},circle,fill,inner sep=1.5pt] at (axis cs:0,-1) {};
+\node[label={180:{$(x_1,y_1)$}}] at (axis cs:1,3) {};
+\node[label={180:{$(x_2,y_2)$}}] at (axis cs:2,7) {};
+\node[label={180:{$(x_3,y_3)$}}] at (axis cs:3,11) {};
+\end{axis}
+\end{tikzpicture}
+\label{fig:abb1}
+\caption{Polynomdarstellung für das Shamirs Secret Sharing Schema}
+\end{figure}
