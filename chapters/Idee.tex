@@ -1,0 +1,12 @@
+\section{Die Idee der Kombination}
+Das Ziel dieser Arbeit besteht darin, die Vorteile beider Verfahren zu kombinieren, um eine robuste und sichere Authentifizierungsmethode zu entwickeln. Im Kern wird ein Geheimnis aus mehreren Authentifizierungsfaktoren generiert und mithilfe von Shamir's Secret Sharing aufgeteilt. Die zur Multi-Faktor-Authentifizierung verwendeten Merkmale entsprechen einem Passwort (Wissen), dem Fingerabdruck des Nutzers (Eigenheit) und einem Wiederherstellungsschlüssel in Form eines QR-Codes (Besitz). Die Kombination aller drei Faktoren dient als Grundlage zur Berechnung des Geheimnisses, welches anschließend mittels Shamir's Secret Sharing in drei Shares aufgeteilt wird, wobei nur zwei Stück zur späteren Authentifizierung benötigt werden. Jeder Share wird anschließend eindeutig zu einem der obigen Faktoren zugeordnet und auf unterschiedlichen Wegen sicher abgelegt, zum Beispiel der Passwort-Share in einer Datenbank, der Fingerabdruck-Share im sicheren Bereich eines Smartphones und der zugehörige Share zum Wiederherstellungsschlüssel als QR-Code ausgedruckt an einem sicheren Ort.
+
+\subsection{Vorteile dieses Konzepts}
+\subsubsection{Erhöhte Sicherheit}
+MFA und SSS ergänzen sich gegenseitig, um eine robuste Sicherheitsarchitektur zu schaffen. Während MFA bereits eine zusätzliche Sicherheitsebene durch die Verwendung mehrerer Faktoren bietet, stellt Shamir's Secret Sharing sicher, dass die zu schützenden Daten unverschlüsselt dezentral gespeichert werden können, da ein einzelner Share keine Rückschlüsse auf das Geheimnis zulässt. Dadurch wird das Risiko eines vollständigen Datenlecks oder unbefugten Zugriffs drastisch minimiert.
+
+\subsubsection{Flexibilität}
+Benutzer können aus drei verschiedenen Optionen (Passwort, Fingerabdruck und Wiederherstellungsschlüssel) zur Authentifizierung wählen. Darüber hinaus kann die Aufteilung von Shares an unterschiedliche Geräte oder Personen erfolgen, um den Bedürfnissen und Anforderungen eines Nutzers gerecht zu werden.
+
+\subsubsection{Schutz vor Datenverlust}
+Wenn beispielsweise ein Benutzer sein Smartphone verliert oder es ir­re­pa­ra­bel beschädigt wurde, ist weiterhin ein Zugriff über die beiden anderen Faktoren gewährleistet. Dies bietet einen zusätzlichen Schutz vor Datenverlust.
