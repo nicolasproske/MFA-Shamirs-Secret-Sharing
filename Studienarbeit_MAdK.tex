@@ -1,19 +1,56 @@
 % Praeamble
 \documentclass[conference,10pt,a4paper]{IEEEtran}
 
+%\usepackage[onehalfspacing]{setspace}
+
 \usepackage[T1]{fontenc}
 \usepackage[ansinew]{inputenc}
 \usepackage[ngerman]{babel}
+
 \usepackage{lipsum} % Zum Generieren von Blindtext
 \usepackage{csquotes} % Anführungszeichen
 
-\usepackage{amsmath}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.16}
-\usepackage{graphicx}
+\usepackage{amsmath} % Mathematischen Symbole
 
-\usepackage{hyperref}
+\usepackage{hyperref} % Klickbare Verlinkungen
 \usepackage[figure]{hypcap}
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{RGB}{0, 128, 1}
+\definecolor{codepurple}{RGB}{177, 33, 255}
+\definecolor{codegray}{rgb}{0.5, 0.5, 0.5}
+\definecolor{codeorange}{RGB}{186, 33, 33}
+\definecolor{backcolour}{RGB}{247, 247, 247}
+
+\lstset{
+    language=Python,
+    basicstyle=\linespread{1.2}\ttfamily\footnotesize,
+    keywordstyle=\color{codegreen}\ttfamily\bfseries,
+    stringstyle=\color{codeorange}\ttfamily,
+    commentstyle=\color{codegray}\ttfamily\itshape,
+    morecomment=[l][\color{codegray}]{\#},
+    backgroundcolor=\color{backcolour},
+    rulecolor=\color{codegray},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    numbers=left,
+    numberstyle=\scriptsize\color{codegray},
+    breaklines=true,
+    breakatwhitespace=true,
+    captionpos=b
+}
+
+% Diagramme
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows}
+\tikzstyle{process} = [rectangle, draw, text centered, minimum height=1.5em]
+\tikzstyle{decision} = [diamond, draw, text centered]
+\tikzstyle{data}=[trapezium, draw, text centered, trapezium left angle=60, trapezium right angle=120, minimum height=1.5em]
+\tikzstyle{connector} = [draw, -latex']
 
 \renewcommand\IEEEkeywordsname{Schlüsselwörter}
 \def\code#1{\texttt{#1}}
@@ -53,6 +90,7 @@ MFA, Secret Sharing
 \input{chapters/OFA_MFA}
 \input{chapters/SSS}
 \input{chapters/Idee}
+\input{chapters/Implementierung}
 
 % Literaturverzeichnis
 \printbibliography

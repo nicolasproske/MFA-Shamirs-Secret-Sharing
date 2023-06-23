@@ -1,0 +1,100 @@
+\section{Implementierung}
+In diesem Kapitel wird die Idee der Kombination von MFA und SSS anhand einer Implementierung in Python v3.10.9 schrittweise erklärt. Die folgenden Code-Ausschnitte dienen nur zur Veranschaulichung und sind deshalb ohne weitere Vorkehrungen nicht zwingend lauffähig.
+
+\subsection{Phase 1: Konstruktion des Geheimnisses}
+Bevor eine Authentifizierung stattfinden kann, müssen die dafür benötigten Shares erst einmal erzeugt werden. Dazu wird ein Geheimnis benötigt, welches auf allen drei Faktoren basiert. Das Ziel dieser Phase ist es, eine natürliche Zahl zu konstruieren, die als Geheimnis für Shamir's Secret Sharing verwendet werden kann.
+
+\subsubsection{Nutzer legt drei Faktoren fest}
+Zu den eben genannten Faktoren zählen ein Passwort, ein Fingerabdruck und ein Wiederherstellungsschlüssel. Wie in \autoref{code:input_factors} abgebildet müssen die ersten beiden Faktoren vom Nutzer eingegeben werden, der Dritte wird zufällig in Form eines 16 Byte langen hexadezimalen Strings generiert.
+
+\begin{lstlisting}[caption={Initialisierung der drei Faktoren},label=code:input_factors,numbers=right]
+password = input() # 1. Faktor
+fingerprint = input() # 2. Faktor
+recovery_key = os.urandom(16).hex() # 3. Faktor
+\end{lstlisting}
+
+\subsubsection{Faktoren umwandeln}
+All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt. Daher ist es wichtig, dass diese Informationen umgewandelt werden, um mögliche Rückschlüsse auf die ursprünglichen Eingaben des Nutzers auszuschließen. Aus diesem Grund werden im nächsten Schritt alle Faktoren mit SHA256 gehasht (siehe \autoref{fig:hash_factors}).
+
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}
+
+\node [data, fill=orange!10] at (-2.5,0) (password) {Passwort};
+\node [data, fill=blue!10] at (-0,0) (fingerprint) {Fingerabdruck};
+\node [data, fill=green!10] at (2.5,0) (recovery_key) {Schlüssel};
+\node [data, fill=gray!10] at (0,-1.25) (hash_factors) {SHA256-Hash};
+\node [data, fill=orange!10] at (-2.5,-2.25) (password_hash) {807A09...};
+\node [data, fill=blue!10] at (-0,-3) (fingerprint_hash) {8587EC...};
+\node [data, fill=green!10] at (2.5,-2.25) (recovery_key_hash) {39B997...};
+
+\node[draw=none] at (-3.25, -0.75) {W@6a...};
+\node[draw=none] at (0.6, -0.625) {1011...};
+\node[draw=none] at (3.1, -0.75) {cf61...};
+
+\path [connector] (password) |- (hash_factors);
+\path [connector] (fingerprint) -- (hash_factors);
+\path [connector] (recovery_key) |- (hash_factors);
+\path [connector] (hash_factors) |- (password_hash);
+\path [connector] (hash_factors) -- (fingerprint_hash);
+\path [connector] (hash_factors) |- (recovery_key_hash);
+
+\end{tikzpicture}
+\caption{Faktoren umwandeln}
+\label{fig:hash_factors}
+\end{figure}
+
+Die in \autoref{code:hash_factors} gegebene Funktion \texttt{hash\_string} nimmt einen String \texttt{value} entgegen. Die Funktion greift auf die \texttt{hashlib}-Bibliothek zurück, um den SHA-256-Hash des gegebenen Werts zu berechnen. Zunächst wird der übergebene Wert mit \texttt{.encode()} in eine Bytefolge umgewandelt, woraufhin  die \texttt{.digest()}-Methode auf den berechneten Hash angewendet wird, um das Ergebnis als Bytes zurückzugeben, um diese im nachfolgenden Schritt in eine ganze Zahl umwandeln zu können.
+
+\begin{lstlisting}[caption={Hashen der drei Faktoren},label=code:hash_factors,numbers=left]
+def hash_string(value):
+    return hashlib.sha256(value.encode()).digest()
+
+password_hash = hash_string(password)
+fingerprint_hash = hash_string(fingerprint)
+recovery_key_hash = hash_string(recovery_key)
+\end{lstlisting}
+
+\subsubsection{Hashwerte in Zahlen umwandeln}
+Alle drei erhaltenen Hashwerte müssen nun als Zahlen interpretiert werden, da Shamir's Secret Sharing eine ganze Zahl für das Geheimnis fordert. Die Funktion \texttt{hash\_to\_int} aus \autoref{code:interpret_hashes} nimmt ebenfalls einen Wert \texttt{value} entgegen, der hier allerdings die zuvor generierte Bytefolge repräsentiert. Durch Verwendung der Methode \texttt{int.from\_bytes()} mit dem Parameter \texttt{value} wandelt die Funktion diese Bytefolge in eine Ganzzahl um. Dabei erfolgt die Interpretation der Bytes in der Reihenfolge \textquote{big}, wodurch das Most Significant Bit zuerst und das Least Significant Bit zuletzt berücksichtigt wird. Das Ergebnis, also die umgewandelte Ganzzahl, wird von der Funktion zurückgegeben.
+
+\begin{lstlisting}[caption={Hashwerte als Zahlen interpretieren},label=code:interpret_hashes,numbers=left]
+def hash_to_int(value):
+    return int.from_bytes(value, byteorder="big")
+
+password_number = hash_to_int(password_hash)
+fingerprint_number = hash_to_int(fingerprint_hash)
+recovery_key_number = hash_to_int(recovery_key_hash)
+\end{lstlisting}
+
+\subsubsection{Geheimnis erzeugen}
+Der vorletzte Schritt besteht darin, alle Zahlen zusammenzufügen, um das Geheimnis zu erhalten. Dabei ist zu beachten, dass die Zahlen nicht addiert, sondern in zufälliger Reihenfolge konkateniert werden. Dazu wird eine Liste mit den Zahlen der drei umgewandelten Hashwerte erstellt und anschließend gemischt. Die nun zufällig angeordneten Zahlen werden in einer Schleife durchlaufen, in einen String umgewandelt und aneinandergereiht. Dieser String wird zum Schluss wieder zu einem Integer konvertiert und der Variable für das Geheimnis zugewiesen (siehe \autoref{code:concat_numbers}). 
+
+\begin{lstlisting}[caption={Zahlen zu Geheimnis konkatenieren},label=code:concat_numbers,numbers=right]
+numbers = [password_number, fingerprint_number, recovery_key_number]
+random.shuffle(numbers)
+S = int("".join(str(num) for num in numbers))
+\end{lstlisting}
+
+Um das Geheimnis während der Authentifizierung bei einer erfolgreichen Rekonstruktion auf Korrektheit prüfen zu können, muss es gespeichert werden. Dazu wird es wie die Faktoren in \autoref{code:hash_factors} mit SHA256 gehasht.
+
+\subsection{Phase 2: Generierung der Shares}
+Das nicht gehashte Geheimnis wird in dieser Phase dazu benötigt, um es unter Verwendung von Shamir's Secret Sharing in einzelne Shares aufteilen zu können.
+
+\subsubsection{Primzahl erzeugen}
+Alle Berechnungen erfolgen wie auch zu Beginn in der mathematischen Veranschaulichung in einem endlichen Körper. Dieser wird definiert als \( GF(p) \), wobei \( p \) eine Primzahl in derselben Größenordnung des Geheimnisses ist. Die Bibliothek \textquote{sympy} bietet dafür die Funktion \textquote{nextprime}. Die Eingabe der Variable \( S \) erzeugt die nächstgrößere Primzahl, welche für die nachfolgenden Berechnungen verwendet wird.
+
+\subsubsection{Shares erzeugen}
+Nach allen Vorbereitungen wird das Geheimnis nun im letzten Schritt in einzelne Shares aufgeteilt. Das in \autoref{code:create_shares} verwendete (2, 3)-Schwellenwertschema erzeugt insgesamt drei Shares, wovon zwei zur Rekonstruktion benötigt werden.
+
+\begin{lstlisting}[caption={Shares erzeugen},label=code:create_shares,numbers=right]
+def create_shares(S, p):
+    m = int.from_bytes(os.urandom(32), byteorder="big") # Zufälliger Koeffizient
+    shares = []
+    for x in range(1, 4): # x aufsteigend iterieren
+        y = (m * x + S) % p # y-Wert berechnen
+        shares.append((x, y)) # Punkt hinzufügen
+    return shares
+
+shares = create_shares(S, p)
+\end{lstlisting}

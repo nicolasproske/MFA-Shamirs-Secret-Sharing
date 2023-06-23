@@ -1,12 +1,62 @@
 \section{Die Idee der Kombination}
-Das Ziel dieser Arbeit besteht darin, die Vorteile beider Verfahren zu kombinieren, um eine robuste und sichere Authentifizierungsmethode zu entwickeln. Im Kern wird ein Geheimnis aus mehreren Authentifizierungsfaktoren generiert und mithilfe von Shamir's Secret Sharing aufgeteilt. Die zur Multi-Faktor-Authentifizierung verwendeten Merkmale entsprechen einem Passwort (Wissen), dem Fingerabdruck des Nutzers (Eigenheit) und einem Wiederherstellungsschlüssel in Form eines QR-Codes (Besitz). Die Kombination aller drei Faktoren dient als Grundlage zur Berechnung des Geheimnisses, welches anschließend mittels Shamir's Secret Sharing in drei Shares aufgeteilt wird, wobei nur zwei Stück zur späteren Authentifizierung benötigt werden. Jeder Share wird anschließend eindeutig zu einem der obigen Faktoren zugeordnet und auf unterschiedlichen Wegen sicher abgelegt, zum Beispiel der Passwort-Share in einer Datenbank, der Fingerabdruck-Share im sicheren Bereich eines Smartphones und der zugehörige Share zum Wiederherstellungsschlüssel als QR-Code ausgedruckt an einem sicheren Ort.
+Das Ziel dieser Arbeit besteht darin, die Vorteile beider Verfahren zu kombinieren, um eine robuste und sichere Authentifizierungsmethode zu entwickeln.
 
-\subsection{Vorteile dieses Konzepts}
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}
+
+\node [data, fill=gray!10] at (0,-1) (input_factors) {Nutzer legt drei Faktoren fest};
+\node [process, fill=gray!10] at (0,-2) (transform_factors) {Faktoren in Geheimnis umwandeln};
+\node [process, fill=gray!10] at (0,-3) (gen_shares) {Geheimnis in Shares aufteilen};
+\node [process, fill=gray!10] at (0,-4) (store_shares) {Shares verteilt speichern};
+
+\path [connector] (input_factors) -- (transform_factors);
+\path [connector] (transform_factors) -- (gen_shares);
+\path [connector] (gen_shares) -- (store_shares);
+
+\end{tikzpicture}
+\caption{Überblick: Generierung der Shares}
+\label{fig:ueberblick_gen_shares}
+\end{figure}
+
+\autoref{fig:ueberblick_gen_shares} zeigt den groben Ablauf, wie die Shares erzeugt werden. Im Kern wird ein Geheimnis aus mehreren Authentifizierungsfaktoren generiert und mithilfe von Shamir's Secret Sharing aufgeteilt. Die zur Multi-Faktor-Authentifizierung verwendeten Faktoren entsprechen einem Passwort (Wissen), dem Fingerabdruck des Nutzers (Eigenheit) und einem Wiederherstellungsschlüssel in Form eines QR-Codes (Besitz). Die Kombination aller drei Faktoren dient als Grundlage zur Berechnung des Geheimnisses, welches anschließend mittels Shamir's Secret Sharing in drei Shares aufgeteilt wird, wobei nur zwei Stück zur späteren Authentifizierung benötigt werden. Jeder Share wird anschließend eindeutig zu einem der obigen Faktoren zugeordnet und auf unterschiedlichen Wegen sicher abgelegt, zum Beispiel der Passwort-Share in einer Datenbank, der Fingerabdruck-Share im sicheren Bereich eines Smartphones und der zugehörige Share zum Wiederherstellungsschlüssel als QR-Code ausgedruckt an einem sicheren Ort.\par
+
+Nachdem alle Shares erfolgreich generiert wurden und gespeichert sind, kann sich der Nutzer mit zwei der drei zu Beginn festgelegten Faktoren authentifizieren. Mit Blick auf \autoref{fig:ueberblick_auth_shares} wählt der Nutzer zu Beginnn aus, welche zwei Faktoren er dazu verwenden möchte. Nach Eingabe eines korrekten Faktores gibt das System den verknüpften Share frei, welcher im Anschluss zur Rekonstruktion verwendet wird. Sobald beide Shares zur Verfügung stehen wird das Geheimnis wiederhergestellt und überprüft, ob der Wert dem ursprünglichen Geheimnis entspricht. Falls ja, ist die Authentifizierung erfolgreich, andernfalls erhält der Nutzer eine Fehlermeldung.
+
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}
+
+\node [data, fill=gray!10] at (0,-1) (def_factors) {Nutzer wählt zwei Faktoren aus};
+\node [data, fill=gray!10] at (0,-2) (input_factors) {Nutzer gibt Faktoren ein};
+\node [process, fill=gray!10] at (0,-3) (recon_shares) {Geheimnis rekonstruieren};
+\node [decision, fill=gray!10] at (0,-5) (correct) {Korrekt?};
+
+\node[draw=none] at (1.625, -4.75) (no) {Nein};
+\node[draw=none] at (0.35, -6.25) (yes) {Ja};
+
+\node [process, fill=red!30] at (3,-5) (error) {Fehler};
+\node [process, fill=green!30] at (0,-7) (success) {Authentifiziert};
+
+\path [connector] (def_factors) -- (input_factors);
+\path [connector] (input_factors) -- (recon_shares);
+\path [connector] (recon_shares) -- (correct);
+\path [connector] (correct) -- (error);
+\path [connector] (correct) -- (success);
+
+\end{tikzpicture}
+\caption{Überblick: Authentifizierung mit Shares}
+\label{fig:ueberblick_auth_shares}
+\end{figure}
+
+\subsection{Vorteile}
 \subsubsection{Erhöhte Sicherheit}
 MFA und SSS ergänzen sich gegenseitig, um eine robuste Sicherheitsarchitektur zu schaffen. Während MFA bereits eine zusätzliche Sicherheitsebene durch die Verwendung mehrerer Faktoren bietet, stellt Shamir's Secret Sharing sicher, dass die zu schützenden Daten unverschlüsselt dezentral gespeichert werden können, da ein einzelner Share keine Rückschlüsse auf das Geheimnis zulässt. Dadurch wird das Risiko eines vollständigen Datenlecks oder unbefugten Zugriffs drastisch minimiert.
 
 \subsubsection{Flexibilität}
-Benutzer können aus drei verschiedenen Optionen (Passwort, Fingerabdruck und Wiederherstellungsschlüssel) zur Authentifizierung wählen. Darüber hinaus kann die Aufteilung von Shares an unterschiedliche Geräte oder Personen erfolgen, um den Bedürfnissen und Anforderungen eines Nutzers gerecht zu werden.
+Benutzer können aus drei verschiedenen Optionen (Passwort, Fingerabdruck und Wiederherstellungsschlüssel) zur Authentifizierung wählen. Darüber hinaus kann die Aufteilung von Shares an unterschiedliche Geräte oder Personen erfolgen, um sowohl den Bedürfnissen und Anforderungen des Nutzers als auch eines Systems gerecht zu werden.
 
 \subsubsection{Schutz vor Datenverlust}
-Wenn beispielsweise ein Benutzer sein Smartphone verliert oder es ir­re­pa­ra­bel beschädigt wurde, ist weiterhin ein Zugriff über die beiden anderen Faktoren gewährleistet. Dies bietet einen zusätzlichen Schutz vor Datenverlust.
+Wenn beispielsweise ein Benutzer das verknüpfte Smartphone verliert oder es ir­re­pa­ra­bel beschädigt wurde, ist weiterhin ein Zugriff über die beiden anderen Faktoren gewährleistet. Dies bietet einen zusätzlichen Schutz vor Datenverlust.\par
+
+Zusammenfassend lässt sich sagen, dass das Zusammenspiel beider Methoden die Sicherheit eines Authentifizierungsprozesses erhöht. Deshalb wird im Folgenden eine mögliche Implementierung vorgestellt, welche die einzelnen Schritte im Detail verdeutlichen soll.
