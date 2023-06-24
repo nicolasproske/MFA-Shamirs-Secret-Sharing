@@ -18,20 +18,18 @@
 \usepackage{listings}
 \usepackage{xcolor}
 
-\definecolor{codegreen}{RGB}{0, 128, 1}
-\definecolor{codepurple}{RGB}{177, 33, 255}
 \definecolor{codegray}{rgb}{0.5, 0.5, 0.5}
-\definecolor{codeorange}{RGB}{186, 33, 33}
-\definecolor{backcolour}{RGB}{247, 247, 247}
+\definecolor{darkgray}{rgb}{0.3, 0.3, 0.3}
+\definecolor{backcolor}{RGB}{247, 247, 247}
 
 \lstset{
     language=Python,
     basicstyle=\linespread{1.2}\ttfamily\footnotesize,
-    keywordstyle=\color{codegreen}\ttfamily\bfseries,
-    stringstyle=\color{codeorange}\ttfamily,
-    commentstyle=\color{codegray}\ttfamily\itshape,
-    morecomment=[l][\color{codegray}]{\#},
-    backgroundcolor=\color{backcolour},
+    keywordstyle=\color{blue}\ttfamily,
+    stringstyle=\color{codegray}\ttfamily,
+    commentstyle=\color{teal}\ttfamily,
+    morecomment=[l][\color{teal}]{\#},
+    backgroundcolor=\color{backcolor},
     rulecolor=\color{codegray},
     showspaces=false,
     showstringspaces=false,
@@ -42,6 +40,12 @@
     breaklines=true,
     breakatwhitespace=true,
     captionpos=b
+}
+
+% Eingebetteter Code
+\usepackage{xparse}
+\NewDocumentCommand{\codeword}{v}{%
+\texttt{\ttfamily\small\textcolor{darkgray}{#1}}%
 }
 
 % Diagramme

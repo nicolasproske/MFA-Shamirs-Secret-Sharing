@@ -1,20 +1,22 @@
 \section{Implementierung}
-In diesem Kapitel wird die Idee der Kombination von MFA und SSS anhand einer Implementierung in Python v3.10.9 schrittweise erklärt. Die folgenden Code-Ausschnitte dienen nur zur Veranschaulichung und sind deshalb ohne weitere Vorkehrungen nicht zwingend lauffähig.
+Das folgende Kapitel beschreibt schrittweise die praktische Umsetzung einer in Python (Version 3.10.9) programmierten Kombination von Multi-Faktor-Authentifizierung und Shamir's Secret Sharing. Dieser Prozess gliedert sich in drei Phasen: \textit{Geheimniserstellung}, \textit{Share-Generierung} und \textit{Authentifizierung}. In der ersten Phase wird eine natürliche Zahl auf Grundlage von drei verschiedenen Faktoren konstruiert. Diese dient in Phase 2 als Geheimnis für die Anwendung von Shamir's Secret Sharing, um daraus drei Shares zu erzeugen. Für die abschließende Authentifizierung in Phase 3 werden zwei dieser Shares benötigt.\par
+
+\textit{Anmerkung:} Die nachfolgend präsentierten Code-Abschnitte dienen hauptsächlich der Veranschaulichung und sind ohne zusätzliche Anpassungen und Ergänzungen nicht zwingend lauffähig.
 
 \subsection{Phase 1: Konstruktion des Geheimnisses}
-Bevor eine Authentifizierung stattfinden kann, müssen die dafür benötigten Shares erst einmal erzeugt werden. Dazu wird ein Geheimnis benötigt, welches auf allen drei Faktoren basiert. Das Ziel dieser Phase ist es, eine natürliche Zahl zu konstruieren, die als Geheimnis für Shamir's Secret Sharing verwendet werden kann.
+Vor der Durchführung einer Authentifizierung ist es notwendig, die dafür benötigten Shares zu generieren. Als Grundlage dient hierbei ein Geheimnis, das auf Basis von drei verschiedenen Faktoren erzeugt wird.
 
 \subsubsection{Nutzer legt drei Faktoren fest}
-Zu den eben genannten Faktoren zählen ein Passwort, ein Fingerabdruck und ein Wiederherstellungsschlüssel. Wie in \autoref{code:input_factors} abgebildet müssen die ersten beiden Faktoren vom Nutzer eingegeben werden, der Dritte wird zufällig in Form eines 16 Byte langen hexadezimalen Strings generiert.
+Die besagten Faktoren beinhalten ein Passwort, einen Fingerabdruck und einen Wiederherstellungsschlüssel. Wie im Code-Ausschnitt \autoref{code:input_factors} gezeigt, werden die ersten beiden Faktoren vom Nutzer bereitgestellt, während der dritte Faktor zufällig in Form eines 16 Byte langen hexadezimalen Strings generiert wird.
 
-\begin{lstlisting}[caption={Initialisierung der drei Faktoren},label=code:input_factors,numbers=right]
+\begin{lstlisting}[caption={Initialisierung der drei Faktoren},label=code:input_factors,numbers=left]
 password = input() # 1. Faktor
 fingerprint = input() # 2. Faktor
 recovery_key = os.urandom(16).hex() # 3. Faktor
 \end{lstlisting}
 
 \subsubsection{Faktoren umwandeln}
-All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt. Daher ist es wichtig, dass diese Informationen umgewandelt werden, um mögliche Rückschlüsse auf die ursprünglichen Eingaben des Nutzers auszuschließen. Aus diesem Grund werden im nächsten Schritt alle Faktoren mit SHA256 gehasht (siehe \autoref{fig:hash_factors}).
+All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt. Daher ist es wichtig, dass diese Informationen umgewandelt werden, um mögliche Rückschlüsse auf die ursprünglichen Eingaben des Nutzers auszuschließen. Aus diesem Grund werden alle Faktoren in einem weiteren Schritt mittels der SHA256-Hashfunktion umgewandelt (siehe \autoref{fig:hash_factors}).
 
 \begin{figure}[!h]
 \centering
@@ -44,7 +46,7 @@ All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt
 \label{fig:hash_factors}
 \end{figure}
 
-Die in \autoref{code:hash_factors} gegebene Funktion \texttt{hash\_string} nimmt einen String \texttt{value} entgegen. Die Funktion greift auf die \texttt{hashlib}-Bibliothek zurück, um den SHA-256-Hash des gegebenen Werts zu berechnen. Zunächst wird der übergebene Wert mit \texttt{.encode()} in eine Bytefolge umgewandelt, woraufhin  die \texttt{.digest()}-Methode auf den berechneten Hash angewendet wird, um das Ergebnis als Bytes zurückzugeben, um diese im nachfolgenden Schritt in eine ganze Zahl umwandeln zu können.
+Zur Realisierung im Quelltext nimmt die in \autoref{code:hash_factors} gegebene Funktion \codeword{hash_string} einen String \codeword{value} entgegen. Dieser Wert wird zunächst mit \codeword{.encode()} als Bytes repräsentiert und unter Verwendung der \codeword{hashlib}-Bibliothek in einen SHA-256-Hash konvertiert. Als letzter Schritt wird die \codeword{.digest()}-Methode auf den berechneten Hash angewendet, um das Ergebnis als Bytefolge zurückzugeben, um diese im nachfolgenden Schritt in eine ganze Zahl umwandeln zu können.
 
 \begin{lstlisting}[caption={Hashen der drei Faktoren},label=code:hash_factors,numbers=left]
 def hash_string(value):
@@ -55,10 +57,10 @@ fingerprint_hash = hash_string(fingerprint)
 recovery_key_hash = hash_string(recovery_key)
 \end{lstlisting}
 
-\subsubsection{Hashwerte in Zahlen umwandeln}
-Alle drei erhaltenen Hashwerte müssen nun als Zahlen interpretiert werden, da Shamir's Secret Sharing eine ganze Zahl für das Geheimnis fordert. Die Funktion \texttt{hash\_to\_int} aus \autoref{code:interpret_hashes} nimmt ebenfalls einen Wert \texttt{value} entgegen, der hier allerdings die zuvor generierte Bytefolge repräsentiert. Durch Verwendung der Methode \texttt{int.from\_bytes()} mit dem Parameter \texttt{value} wandelt die Funktion diese Bytefolge in eine Ganzzahl um. Dabei erfolgt die Interpretation der Bytes in der Reihenfolge \textquote{big}, wodurch das Most Significant Bit zuerst und das Least Significant Bit zuletzt berücksichtigt wird. Das Ergebnis, also die umgewandelte Ganzzahl, wird von der Funktion zurückgegeben.
+\subsubsection{Interpretation der Hash-Werte als Zahlen}
+Alle drei erhaltenen Hashes müssen nun als Zahlen interpretiert werden, da Shamir's Secret Sharing eine ganze Zahl für das Geheimnis fordert. Die Funktion \codeword{hash_to_int} aus \autoref{code:interpret_hashes} nimmt ebenfalls einen Parameter \codeword{value} entgegen, der hier die zuvor generierte Bytefolge darstellt. Durch die Verwendung der Methode \codeword{int.from_bytes()} mit dem Parameter \codeword{value} wandelt die Funktion diese Bytefolge in eine Ganzzahl um. Dabei erfolgt die Interpretation der Bytes in der Reihenfolge \textquote{big}, wodurch das Most Significant Bit zuerst und das Least Significant Bit zuletzt berücksichtigt wird. Das Ergebnis der Funktion, eine Ganzzahl, wird zurückgegeben. Anschließend wird diese Funktion auf die Hash-Werte von Passwort, Fingerabdruck und Wiederherstellungsschlüssel angewendet und die Resultate in den entsprechenden Variablen gespeichert.
 
-\begin{lstlisting}[caption={Hashwerte als Zahlen interpretieren},label=code:interpret_hashes,numbers=left]
+\begin{lstlisting}[caption={Hashwerte als Zahlen interpretieren},label=code:interpret_hashes,numbers=right]
 def hash_to_int(value):
     return int.from_bytes(value, byteorder="big")
 
@@ -68,7 +70,7 @@ recovery_key_number = hash_to_int(recovery_key_hash)
 \end{lstlisting}
 
 \subsubsection{Geheimnis erzeugen}
-Der vorletzte Schritt besteht darin, alle Zahlen zusammenzufügen, um das Geheimnis zu erhalten. Dabei ist zu beachten, dass die Zahlen nicht addiert, sondern in zufälliger Reihenfolge konkateniert werden. Dazu wird eine Liste mit den Zahlen der drei umgewandelten Hashwerte erstellt und anschließend gemischt. Die nun zufällig angeordneten Zahlen werden in einer Schleife durchlaufen, in einen String umgewandelt und aneinandergereiht. Dieser String wird zum Schluss wieder zu einem Integer konvertiert und der Variable für das Geheimnis zugewiesen (siehe \autoref{code:concat_numbers}). 
+Das Geheimnis ergibt sich nun durch die Aneinanderreihung aller Zahlen. Hierbei werden die Zahlen nicht addiert, sondern in zufälliger Reihenfolge konkateniert. In \autoref{code:concat_numbers} wird zuerst eine Liste \codeword{numbers} erstellt, die die Ganzzahlen der drei umgewandelten Hash-Werte enthält. Anschließend wird die Liste durch Anwendung der \codeword{shuffle}-Methode aus der Bibliothek \textquote{random} zufällig durchmischt. Die so neu geordneten Zahlen werden in einer Schleife durchlaufen, jeder Wert in einen String umgewandelt und an den vorherigen Wert angehangen. Dieser zusammengesetzte String wird schlussendlich in einen Integer umgewandelt und in der Variablen für das Geheimnis gespeichert (siehe \autoref{code:concat_numbers}).
 
 \begin{lstlisting}[caption={Zahlen zu Geheimnis konkatenieren},label=code:concat_numbers,numbers=right]
 numbers = [password_number, fingerprint_number, recovery_key_number]
@@ -79,15 +81,15 @@ S = int("".join(str(num) for num in numbers))
 Um das Geheimnis während der Authentifizierung bei einer erfolgreichen Rekonstruktion auf Korrektheit prüfen zu können, muss es gespeichert werden. Dazu wird es wie die Faktoren in \autoref{code:hash_factors} mit SHA256 gehasht.
 
 \subsection{Phase 2: Generierung der Shares}
-Das nicht gehashte Geheimnis wird in dieser Phase dazu benötigt, um es unter Verwendung von Shamir's Secret Sharing in einzelne Shares aufteilen zu können.
+Das originale, nicht gehashte Geheimnis wird in dieser Phase dazu benötigt, um es mit Hilfe von Shamir's Secret Sharing in einzelne Shares zu zerlegen.
 
 \subsubsection{Primzahl erzeugen}
-Alle Berechnungen erfolgen wie auch zu Beginn in der mathematischen Veranschaulichung in einem endlichen Körper. Dieser wird definiert als \( GF(p) \), wobei \( p \) eine Primzahl in derselben Größenordnung des Geheimnisses ist. Die Bibliothek \textquote{sympy} bietet dafür die Funktion \textquote{nextprime}. Die Eingabe der Variable \( S \) erzeugt die nächstgrößere Primzahl, welche für die nachfolgenden Berechnungen verwendet wird.
+Alle Berechnungen erfolgen wie auch zu Beginn in der mathematischen Veranschaulichung in einem endlichen Körper. Dieser wird definiert als \( GF(p) \), wobei \( p \) eine Primzahl in derselben Größenordnung des Geheimnisses ist. Die Bibliothek \textquote{sympy} stellt die Funktion \textquote{nextprime} bereit, die auf die Eingabe der Variable \( S \) angewendet die nächstgrößere Primzahl erzeugt. Diese wird für die nachfolgenden Berechnungen verwendet.
 
 \subsubsection{Shares erzeugen}
-Nach allen Vorbereitungen wird das Geheimnis nun im letzten Schritt in einzelne Shares aufgeteilt. Das in \autoref{code:create_shares} verwendete (2, 3)-Schwellenwertschema erzeugt insgesamt drei Shares, wovon zwei zur Rekonstruktion benötigt werden.
+Nachdem alle Vorbereitungen abgeschlossen sind, wird im letzten Schritt das Geheimnis in einzelne Shares zerlegt. Das verwendete (2, 3)-Schwellenwertschema erzeugt insgesamt drei Shares, wovon zwei zur Rekonstruktion benötigt werden. Die Funktion \codeword{create_shares(S, p)} in \autoref{code:create_shares} generiert eine Liste von Punkten, die für die Rekonstruktion des Geheimnisses im späteren Verlauf benötigt werden. Zu Beginn wird ein Koeffizient \( m \) erzeugt, der als Ganzzahl aus 32 zufälligen Bytes interpretiert wird. Dieser Koeffizient wird im nächsten Schritt dazu verwendet, die y-Koordinaten der Punkte zu berechnen. Dafür wird über alle x-Werte von 1 bis einschließlich 3 iteriert und der dazugehörige y-Wert über \( (m * x + S) \mod{p} \) berechnet, wobei \( S \) das Geheimnis und \( p \) die errechnete Primzahl ist. Jeder berechnete Punkt \( (x_i, y_i) \) wird zur Liste \codeword{shares} hinzugefügt. Am Ende wird diese Liste, die die generierten Punkte beziehungsweise Shares enthält, zurückgegeben.
 
-\begin{lstlisting}[caption={Shares erzeugen},label=code:create_shares,numbers=right]
+\begin{lstlisting}[caption={Shares erzeugen},label=code:create_shares,numbers=left]
 def create_shares(S, p):
     m = int.from_bytes(os.urandom(32), byteorder="big") # Zufälliger Koeffizient
     shares = []
@@ -98,3 +100,95 @@ def create_shares(S, p):
 
 shares = create_shares(S, p)
 \end{lstlisting}
+
+\subsection{Phase 3: Authentifizierung}
+Um das Geheimnis wiederherzustellen und die Authentifizierung durchzuführen, müssen zwei Faktoren durch den Benutzer angegeben werden. Nach der vollständigen Eingabe erfolgt die Authentifizierung.
+
+\subsubsection{Auswahl der Faktoren}
+In diesem Schritt wird der Nutzer zur Eingabe der gewünschten Faktoren aufgefordert. Der Nutzer gibt zwei Zahlen, getrennt durch ein Leerzeichen, ein. Jede Zahl steht für einen der drei möglichen Faktoren: Passwort (1), Fingerabdruck (2) oder Wiederherstellungsschlüssel (3). Der Benutzer muss dabei zwei unterschiedliche Zahlen auswählen und jede dieser Zahlen muss entweder 1, 2 oder 3 entsprechen.\par
+
+In \autoref{code:create_shares} wird der Benutzer zuerst dazu aufgefordert, seine gewünschten Faktoren über die Tastatur einzugeben. Die Eingabe muss zwei Zeichen enthalten, die durch ein Leerzeichen getrennt sind. Jedes durch ein Leerzeichen getrenntes Zeichen wird als separates Element in einer Liste gespeichert. Als nächstes wird die Funktion \codeword{map()} verwendet, um alle Elemente in der Liste in ganze Zahlen umzuwandeln. Um die Zahlen nun in einer Liste zu speichern, wird das \codeword{map}-Objekt mit der Funktion \codeword{list()} als Liste ausgegeben. Schließlich wird mit \codeword{[:2]} der Slicing-Operator angewendet, um sicherzustellen, dass nur die ersten beiden Elemente der Liste, also die zwei vom Benutzer eingegebenen Zahlen, berücksichtigt werden. Selbst wenn der Benutzer mehr als zwei Zahlen eingibt, werden nur die ersten beiden für weitere Verarbeitungsschritte verwendet.\par
+
+Nachdem der Benutzer seine Eingabe getätigt hat, wird sichergestellt, dass die Eingabe korrekt ist und den erforderlichen Kriterien entspricht. Dafür werden verschiedene \codeword{assert}-Anweisungen verwendet, um die Überprüfungen durchzuführen und im Falle von Fehlern entsprechende Fehlermeldungen auszugeben.\par
+
+Die erste \codeword{assert}-Anweisung stellt sicher, dass der Benutzer genau zwei Zahlen eingegeben hat. Wenn die Anzahl der eingegebenen Zahlen nicht genau zwei beträgt, wird eine Fehlermeldung mit dem Text \textquote{Bitte verwende genau 2 Zahlen} angezeigt.\par
+
+Die zweite \codeword{assert}-Anweisung überprüft, ob alle eingegebenen Zeichen entweder 1, 2 oder 3 entsprechen. Falls eine der eingegebenen Zahlen nicht zu den erlaubten Werten gehört, wird eine Fehlermeldung mit dem Text \textquote{Bitte verwende nur 1, 2 oder 3} ausgegeben.\par
+
+Die dritte \codeword{assert}-Anweisung garantiert, dass der Benutzer zwei unterschiedliche Zahlen eingegeben hat. Wenn die beiden eingegebenen Zahlen identisch sind, wird eine Fehlermeldung mit dem Text \textquote{Bitte verwende zwei unterschiedliche Zahlen} angezeigt.
+
+\begin{lstlisting}[caption={Faktoren auswählen},label=code:choose_factors,numbers=right]
+factors = list(map(int, input().split()))[:2]
+
+assert len(factors) == 2
+assert all(factor in [1,2,3] for factor in factors)
+assert factors[0] != factors[1]
+\end{lstlisting}
+
+\subsubsection{Eingabe der Faktoren}
+In diesem Abschnitt liegt der Fokus auf der Aufforderung an den Benutzer, die ausgewählten Authentifizierungsfaktoren einzugeben. In \autoref{code:map_factors} entspricht die Variable \codeword{num_factors_map} einem Wörterbuch, das den Zahlen 1, 2 und 3 die entsprechenden Werte für Passwort, Fingerabdruck und Wiederherstellungsschlüssel zuweist. Dieses Wörterbuch wird später verwendet, um die vom Benutzer eingegebenen Faktoren mit den gespeicherten Werten abzugleichen. 
+
+\begin{lstlisting}[caption={Zahlen zu Faktoren zuweisen},label=code:map_factors,numbers=right]
+num_factors_map = {
+    1: password,
+    2: fingerprint,
+    3: recovery_key
+}
+\end{lstlisting}
+
+Die in \autoref{code:input_new_factors} definierte for-Schleife \codeword{for i in factors} ermöglicht es, über die Liste der vom Benutzer ausgewählten Faktoren zu iterieren. Je nachdem, welche Zahlen der Nutzer im letzten Schritt gewählt hat, wird er nun dazu aufgefordet, den dazugehörigen Wert einzugeben. Falls die Faktoren beispielsweise den Werten 1 und 3 entsprechen, muss der Benutzer nacheinander sein zu Beginn festgelegtes Passwort und den Wiederherstellungsschlüssel eingeben. Diese Eingabe wird durch \codeword{user_input = input()} erfasst. Anschließend erfolgt eine Überprüfung mit \codeword{if user_input == num_factors_map[i]}, um festzustellen, ob die Eingabe des Benutzers mit dem gespeicherten Wert des entsprechenden Authentifizierungsfaktors übereinstimmt. Ist dies der Fall, wird der zugehörige Share zur Liste \codeword{user_shares} hinzugefügt. Wenn die Eingabe nicht übereinstimmt, wird eine Fehlermeldung angezeigt und der Authentifizierungsprozess abgebrochen.
+
+\begin{lstlisting}[caption={Eingabe der Faktoren},label=code:input_new_factors,numbers=left]
+user_shares = []
+
+for i in factors:
+    if i == 1:
+        print("\nBitte Passwort eingeben:")
+    elif i == 2:
+        print("\nBitte Fingerabdruck eingeben:")
+    elif i == 3:
+        print("\nBitte Wiederherstellungsschlüssel eingeben:")
+
+    user_input = input()
+
+    # Prüfung auf Übereinstimmung
+    if user_input == num_factors_map[i]:
+        # Eingabe stimmt mit ursprünglichem Wert überein, dazugehöriges Share zu Liste hinzufügen
+        user_shares.append(shares[i - 1])
+\end{lstlisting}
+
+\subsubsection{Geheimnis rekonstruieren}
+Mit den erhaltenen zwei Shares kann das Geheimnis nun rekonstruiert werden.\par
+
+Die \codeword{lagrange()} Funktion aus \autoref{code:lagrange_interpolation} dient zur Berechnung der Lagrange-Koeffizienten, die in der Lagrange-Interpolation verwendet werden. Die Lagrange-Interpolation umfasst die Berechnung eines Polynoms, das eine vorgegebene Menge von Punkten, hier beide Shares, durchläuft. Ein zentraler Bestandteil dieses Verfahrens besteht aus den Lagrange-Koeffizienten, die sicherstellen, dass das Polynom alle gegebenen Punkte korrekt durchläuft. Für jeden Punkt (entsprechend einem Teil des Geheimnisses) wird ein Lagrange-Koeffizient berechnet.\par
+
+Im allgemeinen Fall wird angenommen, dass es $n$ Punkte gibt und der Koeffizient für den Punkt an der Position $i$ berechnet werden soll. Der Lagrange-Koeffizient ist das Produkt mehrerer Teilausdrücke, wobei jeder Teilausdruck vom Wert $x_j$ eines anderen Punktes abhängt. Für jeden anderen Punkt $j$, wobei $i$ und $j$ verschieden sind, wird der Teilausdruck $\frac{{0 - x_j}}{{x_i - x_j}}$ berechnet. Dieser Ausdruck nimmt den Wert 1 an, wenn $x$ gleich $x_i$ ist und den Wert 0, wenn $x$ gleich $x_j$ ist. Die $0$ im Dividend $0 - x_j$ soll zeigen, dass das Polynom bei \( x = 0 \) ausgewertet wird.\par
+
+Die \codeword{lagrange()} Funktion führt diese Berechnungen für einen bestimmten Punkt $i$ durch. Aus dem Punkt $i$ und der Liste aller $x$-Werte liefert die Funktion den berechneten Lagrange-Koeffizienten für den gegebenen Punkt zurück.\par
+
+Im Sonderfall von Shamir's Secret Sharing erfolgen alle Berechnugen im endlichen Körper $GF(p)$. Die Formel zur Berechnung eines Lagrange-Koeffizienten muss daher so angepasst werden, dass die Division durch $(x_i - x_j)$ durch eine Multiplikation mit dem multiplikativen Inversen von $(x_i - x_j)$ ausgetauscht wird. Daher wird in \autoref{code:lagrange_interpolation} in Zeile 5 der Ausdruck \codeword{pow((x_values[i] - x_values[j]), p-2, p)} verwendet. In derselben Zeile ist der Zweck von \( 0 - x_{\text{values}[j]} \), den Ausdruck \( (x - x_{\text{j}}) \) für die Auswertung \( x = 0 \) in der Berechnung des Lagrange-Koeffizienten zu erhalten.
+
+\begin{lstlisting}[caption={Lagrange-Interpolation},label=code:lagrange_interpolation,numbers=right]
+def lagrange(i, x_values):
+    result = 1
+    for j in range(len(x_values)):
+        if j != i:
+            result = (result * (0 - x_values[j]) * pow((x_values[i] - x_values[j]), p-2, p)) % p
+    return result
+\end{lstlisting}
+
+Die in \autoref{code:reconstruct_secret} definierte Funktion \codeword{reconstruct_shares()} nimmt als Argumente eine Liste von Shares und eine Primzahl zur Berechnung des Geheimnisses entgegen. Zunächst werden die x-Werte aus den Punkten extrahiert, welche zur Berechnung der Lagrange-Koeffizienten verwendet werden. Die Funktion durchläuft nun alle Shares. Für jeden Share wird das Produkt aus dem y-Wert des jeweiligen Shares und dessen Lagrange-Koeffizienten berechnet und zu dem Geheimnis addiert. Abschließend wird das Geheimnis von der Funktion zurückgegeben. Der Rückgabewert entspricht dem konstanten Term des rekonstruierten Polynoms und somit dem ursprünglich geteilten Geheimnis.
+
+\begin{lstlisting}[caption={Geheimnis rekonstruieren},label=code:reconstruct_secret,numbers=right]
+def reconstruct_secret(shares, p):
+    x_values = [share[0] for share in shares]
+    secret = 0
+    
+    for i in range(len(shares)):
+        secret = (secret + shares[i][1] * lagrange(i, x_values)) % p
+
+    return secret
+\end{lstlisting}
+
+% TODO: Überarbeiten
+% Um das ursprüngliche Geheimnis S aus den vom Benutzer bereitgestellten und validierten \textquote{Shares} wiederherzustellen, wird die Funktion \codeword{reconstruct_secret(user_shares, p)} aufgerufen. Um den Hash des wiederhergestellten Geheimnisses zu berechnen, wird das wiederhergestellte Geheimnis in eine Zeichenkette umgewandelt, diese wird kodiert und dann mittels SHA-256 gehasht. Das Ergebnis ist der Hash des wiederhergestellten Geheimnisses. Im if-else-Block wird überprüft, ob der Hash des wiederhergestellten Geheimnisses mit dem Hash des ursprünglichen Geheimnisses übereinstimmt. Wenn dies der Fall ist, bedeutet das, dass die Authentifizierung erfolgreich war. Andernfalls wird eine Ausnahme ausgelöst und der Prozess mit einer Fehlermeldung beendet.
