@@ -1,25 +1,25 @@
 \section{Shamir's Secret Sharing}
 Secret Sharing ist ein grundlegender Baustein der modernen Kryptographie. Eines der bekanntesten Verfahren wurde am 1. November 1979 veröffentlicht und ist nach seinem Erfinder Adi Shamir, einem israelischen Kryptographen, benannt: Shamir's Secret Sharing \autocite{shamir-secretsharing-1979}.\par
 
-Es basiert auf der Idee, ein Geheimnis in mehrere Teile, sogenannte Shares, aufzuteilen. Um das Geheimnis wiederherzustellen, müssen eine bestimmte Anzahl dieser Shares zusammengebracht werden. Jeder einzelne Share ist für sich genommen bedeutungslos und gibt keinerlei Informationen preis. Ein Schwellenwert definiert die minimale Anzahl von Shares, die erforderlich sind, um das Geheimnis wiederherstellen zu können. Dies stellt sicher, dass das Geheimnis selbst dann sicher bleibt, wenn ein Teil der Shares verloren gehen oder in die Hände eines Angreifers gelangen. Das dabei verwendete (k, n)-Schwellenwertschema legt fest, wie viele \( k \) Shares benötigt werden, um auf das Geheimnis zu kommen, \( n \) ist größer \( k \) und bezieht sich auf die Gesamtzahl der Shares, in die das Geheimnis aufgeteilt wird.
+Es basiert auf der Idee, ein Geheimnis in mehrere Teile, sogenannte Shares, aufzuteilen. Um das Geheimnis wiederherzustellen, müssen eine bestimmte Anzahl dieser Shares zusammengebracht werden. Jeder einzelne Share ist für sich genommen bedeutungslos und gibt keinerlei Informationen preis. Ein Schwellenwert definiert die minimale Anzahl von Shares, die erforderlich sind, um das Geheimnis wiederherstellen zu können. Dies stellt sicher, dass das Geheimnis selbst dann sicher bleibt, wenn ein Teil der Shares verloren gehen oder in die Hände eines Angreifers gelangen. Das dabei verwendete (k, n)-Schwellenwertschema legt fest, wie viele $k$ Shares benötigt werden, um auf das Geheimnis zu kommen, $n$ ist größer $k$ und bezieht sich auf die Gesamtzahl der Shares, in die das Geheimnis aufgeteilt wird.
 
 \subsection{Mathematische Veranschaulichung}
-Shamir's Secret Sharing basiert auf dem Prinzip der Polynominterpolation in endlichen Körpern, wobei \( k \) Punkte ein Polynom vom Grad \( k - 1 \) eindeutig definieren. Um dies anhand eines mathematischen Beispiels zu veranschaulichen, wird im Folgenden ein (2, 3)-Schwellenschema mit \( k = 2 \) und \( n = 3 \) betrachtet, bei dem das Geheimnis \( S \) der Zahl \( 42 \) entspricht. Sei \( p = 43 \) eine Primzahl mit \( p > S \). Alle Berechnungen erfolgen im endlichen Körper \( GF(p) \).
+Shamir's Secret Sharing basiert auf dem Prinzip der Polynominterpolation in endlichen Körpern, wobei $k$ Punkte ein Polynom vom Grad $k - 1$ eindeutig definieren. Um dies anhand eines mathematischen Beispiels zu veranschaulichen, wird im Folgenden ein (2, 3)-Schwellenschema mit $k = 2$ und $n = 3$ betrachtet, bei dem das Geheimnis $S$ der Zahl $42$ entspricht. Sei $p = 43$ eine Primzahl mit $p > S$. Alle Berechnungen erfolgen im endlichen Körper $\mathbb{F}_p$.
 
 \subsubsection{Generierung der Shares}
-Der erste Schritt besteht darin, ein Polynom vom Grad \( k - 1 = 2 - 1 = 1 \) aufzustellen:
+Der erste Schritt besteht darin, ein Polynom vom Grad $k - 1 = 2 - 1 = 1$ aufzustellen:
 
 \begin{equation*}
 f(x) = mx + b \mod{p}
 \end{equation*}
 
-Die Konstante \( b \) entspricht dabei dem Geheimnis \( S \). Aus Gründen der Übersichtlichkeit wird in diesem Beispiel \( m = 4 \) gewählt:
+Die Konstante $b$ entspricht dabei dem Geheimnis $S$. Aus Gründen der Übersichtlichkeit wird in diesem Beispiel $m = 4$ gewählt:
 
 \begin{equation*}
 f(x) = 4x + 42 \mod{43}
 \end{equation*}
 
-Im nächsten Schritt erfolgt die Berechnung von \( n \) Punkten in der Ebene. Dazu wird für \( x = 1...n \) eingesetzt:
+Im nächsten Schritt erfolgt die Berechnung von $n$ Punkten in der Ebene. Dazu wird für $x = 1...n$ eingesetzt:
 
 \begin{equation*}
 \begin{aligned}
@@ -29,10 +29,10 @@ Im nächsten Schritt erfolgt die Berechnung von \( n \) Punkten in der Ebene. Daz
 \end{aligned}
 \end{equation*}
 
-Jeder der berechneten Punkte \( (1, 3), (2, 7), (3, 11) \) repräsentiert dabei einen Share.
+Jeder der berechneten Punkte $(1, 3), (2, 7), (3, 11)$ repräsentiert dabei einen Share.
 
 \subsubsection{Rekonstruktion mit linearem Gleichungssystem}
-Sind nun \( k \) Punkte gegeben, kann das ursprüngliche Geheimnis rekonstruiert werden. Im Folgenden werden die Punkte \( (1, 3) \) und \( (2, 7) \) als Gleichungen in einem linearen Gleichungssystem dargestellt:
+Sind nun $k$ Punkte gegeben, kann das ursprüngliche Geheimnis rekonstruiert werden. Im Folgenden werden die Punkte $(1, 3)$ und $(2, 7)$ als Gleichungen in einem linearen Gleichungssystem dargestellt:
 
 \begin{equation*}
 \begin{aligned}
@@ -41,7 +41,13 @@ Sind nun \( k \) Punkte gegeben, kann das ursprüngliche Geheimnis rekonstruiert 
 \end{aligned}
 \end{equation*}
 
-Die Unbekannten werden nun über das Substitutionsverfahren gelöst. Durch Umstellen der ersten Gleichung nach \( b \) folgt \( b = 3 - m \). Dieser Ausdruck wird in die zweite Gleichung eingesetzt, was zu \( 2m + (3 - m) = 7 \) führt. Daraus folgt \( m = 4 \). Die erhaltene Lösung für \( m \) wird dann in die umgestellte erste Gleichung eingesetzt, um \( b \) zu berechnen: \( b = 3 - 4 = -1 \). Da die Berechnungen im endlichen Körper \( GF(43) \) durchgeführt werden, wird das Ergebnis modulo \( 43 \) genommen, um das Geheimnis im Wertebereich von \( 0 \) bis \( p-1 \) zu erhalten: \( b = -1 \mod{43} = 42 \), was dem Geheimnis \( S = 42 \) entspricht. Bei größeren Werten von \( k \) würde ein Polynom höheren Grades und ein entsprechend größeres lineares Gleichungssystem entstehen.
+Die Unbekannten werden nun über das Substitutionsverfahren gelöst. Durch Umstellen der ersten Gleichung nach $b$ folgt $b = 3 - m$. Dieser Ausdruck wird in die zweite Gleichung eingesetzt, was zu $2m + (3 - m) = 7$ führt. Daraus folgt $m = 4$. Die erhaltene Lösung für $m$ wird dann in die umgestellte erste Gleichung eingesetzt, um $b$ zu berechnen: $b = 3 - 4 = -1$. Da die Berechnungen im endlichen Körper $\mathbb{F}_{43}$ durchgeführt werden, wird das Ergebnis $\mod{43}$ genommen, um das Geheimnis im Wertebereich von $0$ bis $p-1$ zu erhalten: $b = -1 \mod{43} = 42$, was dem Geheimnis $S = 42$ entspricht. Bei größeren Werten von $k$ würde ein Polynom höheren Grades und ein entsprechend größeres lineares Gleichungssystem entstehen.
 
-\subsubsection{Rekonstruktion mit Lagrange-Interpolation}
-Die Lagrange-Interpolation ist das in der Praxis am häufigsten eingesetzte Verfahren zur Bestimmung des Polynoms einer bestimmten Ordnung, das durch eine gegebene Menge von Punkten verläuft. Diese Methode bietet den Vorteil, dass sie direkt eine Formel zur Rekonstruktion des Geheimnisses liefert, ohne dass das Gleichungssystem explizit gelöst werden muss. Beide Methoden führen jedoch zum gleichen Ergebnis.
+\subsubsection{Rekonstruktion mit Lagrange-Interpolations-Formel}
+Die Lagrange-Interpolation ist das in der Praxis am häufigsten eingesetzte Verfahren zur Bestimmung des Polynoms einer bestimmten Ordnung, das durch eine gegebene Menge von Punkten verläuft. Diese Methode bietet den Vorteil, dass sie direkt eine Formel zur Rekonstruktion des Geheimnisses liefert, ohne dass ein Gleichungssystem explizit gelöst werden muss. Die Koeffizienten $m_0, ..., m_{k-1}$ eines unbekannten Polynoms $f$ vom Grad $k-1$ aus $k$ Punkten $(x_i, y_i)$ können wie folgt berechnet werden:
+
+\[
+f(x) = \sum_{i=1}^{k} \left[ y_i \cdot \prod_{\substack{1 \leq j \leq k \\ i \neq j}} \frac{x - x_j}{x_i - x_j} \right] \mod{p}
+\]
+
+Unter Verwendung dieser Formel lässt sich $m_0 = f(0)$ und damit das Geheimnis $S$ aus $k$ gegebenen Punkten berechnen \autocite[S. 65 f.]{bsi-richtlinie-2023}.
