@@ -16,7 +16,7 @@ recovery_key = os.urandom(16).hex() # 3. Faktor
 \end{lstlisting}
 
 \subsubsection{Faktoren umwandeln}
-All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt. Daher ist es wichtig, dass diese Informationen umgewandelt werden, um mögliche Rückschlüsse auf die ursprünglichen Eingaben des Nutzers auszuschließen. Aus diesem Grund werden alle Faktoren in einem weiteren Schritt mittels der SHA256-Hashfunktion umgewandelt (siehe \autoref{fig:hash_factors}).
+All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt. Daher ist es wichtig, dass diese Informationen umgewandelt werden, um mögliche Rückschlüsse auf die ursprünglichen Eingaben des Nutzers auszuschließen. Aus diesem Grund werden alle Faktoren in einem weiteren Schritt mittels der SHA-256-Hashfunktion umgewandelt (siehe \autoref{fig:hash_factors}).
 
 \begin{figure}[!h]
 \centering
@@ -25,7 +25,7 @@ All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt
 \node [data, fill=orange!10] at (-2.5,0) (password) {Passwort};
 \node [data, fill=blue!10] at (-0,0) (fingerprint) {Fingerabdruck};
 \node [data, fill=green!10] at (2.5,0) (recovery_key) {Schlüssel};
-\node [data, fill=gray!10] at (0,-1.25) (hash_factors) {SHA256-Hash};
+\node [data, fill=gray!10] at (0,-1.25) (hash_factors) {SHA-256-Hash};
 \node [data, fill=orange!10] at (-2.5,-2.25) (password_hash) {807A09...};
 \node [data, fill=blue!10] at (-0,-3) (fingerprint_hash) {8587EC...};
 \node [data, fill=green!10] at (2.5,-2.25) (recovery_key_hash) {39B997...};
@@ -50,7 +50,7 @@ Zur Realisierung im Quelltext nimmt die in \autoref{code:hash_factors} gegebene 
 
 \begin{lstlisting}[caption={Hashen der drei Faktoren},label=code:hash_factors,numbers=left]
 def hash_string(value):
-    return hashlib.sha256(value.encode())
+    return hashlib.SHA-256(value.encode())
 
 password_hash = hash_string(password).digest()
 fingerprint_hash = hash_string(fingerprint).digest()
@@ -70,28 +70,28 @@ recovery_key_number = hash_to_int(recovery_key_hash)
 \end{lstlisting}
 
 \subsubsection{Geheimnis erzeugen}
-Das Geheimnis ergibt sich nun durch die Aneinanderreihung aller Zahlen. Hierbei werden die Zahlen nicht addiert, sondern in zufälliger Reihenfolge konkateniert. In \autoref{code:concat_numbers} wird zuerst eine Liste \codeword{numbers} erstellt, die die Ganzzahlen aus \autoref{code:interpret_hashes} enthält. Anschließend wird die Liste durch Anwendung der \codeword{shuffle}-Methode aus der Bibliothek \textquote{random} zufällig durchmischt. Die so neu geordneten Zahlen werden in einer Schleife durchlaufen, jeder Wert in einen String umgewandelt und an den vorherigen Wert angehangen. Dieser zusammengesetzte String wird schlussendlich in einen Integer umgewandelt und als temporäre Variable \codeword{S_temp} zwischengespeichert (siehe \autoref{code:concat_numbers}).
+Das Geheimnis ergibt sich nun durch die Aneinanderreihung aller Zahlen. Hierbei werden die Zahlen nicht addiert, sondern in zufälliger Reihenfolge konkateniert. In \autoref{code:concat_numbers} wird zuerst eine Liste \codeword{numbers} erstellt, die die Ganzzahlen aus \autoref{code:interpret_hashes} enthält. Anschließend wird die Liste durch Anwendung der \codeword{shuffle}-Methode aus der Bibliothek \textquote{random} zufällig durchmischt. Die so neu geordneten Zahlen werden in einer Schleife durchlaufen, jeder Wert in einen String umgewandelt und an den vorherigen Wert angehangen. Dieser zusammengesetzte String wird schlussendlich in einen Integer umgewandelt und als temporäre Variable \codeword{S} zwischengespeichert (siehe \autoref{code:concat_numbers}).
 
 \begin{lstlisting}[caption={Zahlen zu Geheimnis konkatenieren},label=code:concat_numbers,numbers=right]
 numbers = [password_number, fingerprint_number, recovery_key_number]
 random.shuffle(numbers)
-S_temp = int("".join(str(num) for num in numbers))
+S = int("".join(str(num) for num in numbers))
 \end{lstlisting}
 
-Um das Geheimnis während der Authentifizierung bei einer erfolgreichen Rekonstruktion auf Übereinstimmung prüfen zu können, muss es später abrufbar sein. Dazu wird es in \autoref{code:hash_secret} mit SHA256 gehasht. Dadurch wird sichergestellt, dass das zu schützende Geheimnis für spätere Zwecke ohne Bedenken in einer Datenbank gespeichert werden kann.
+Um das Geheimnis während der Authentifizierung bei einer erfolgreichen Rekonstruktion auf Übereinstimmung prüfen zu können, muss es später abrufbar sein. Dazu wird es in \autoref{code:hash_secret} mit SHA-256 gehasht. Dadurch wird sichergestellt, dass das zu schützende Geheimnis für spätere Zwecke ohne Bedenken in einer Datenbank gespeichert werden kann.
 
 \begin{lstlisting}[caption={Geheimnis hashen},label=code:hash_secret,numbers=right]
-S_hash = hash_string(str(S_temp)).hexdigest()
+S_hash = hash_string(str(S)).hexdigest()
 \end{lstlisting}
 
 \subsection{Phase 2: Generierung der Shares}
-Das originale, nicht gehashte Geheimnis \codeword{S_temp} wird in der zweiten Phase dazu benötigt, um es mit Hilfe von Shamir's Secret Sharing in einzelne Shares zu zerlegen.
+Das originale, nicht gehashte Geheimnis \codeword{S} wird in der zweiten Phase dazu benötigt, um es mit Hilfe von Shamir's Secret Sharing in einzelne Shares zu zerlegen.
 
 \subsubsection{Primzahl erzeugen}
-Alle Berechnungen erfolgen wie auch zu Beginn in der mathematischen Veranschaulichung in einem endlichen Körper. Dieser wird definiert als $\mathbb{F}_p$, wobei $p$ eine Primzahl größer $n$ und $S$ ist. Die Bibliothek \textquote{libnum} stellt die Funktion \textquote{generate\_prime} bereit, die unter Eingabe einer Bitlänge die Primzahl in dieser Größenordnung erzeugt. Zur Erzeugung einer solchen Primzahl wird zunächst die Bitlänge von $S$ ermittelt und 8 Bit addiert, um sicherzustellen, dass die generierte Primzahl immer größer als das Geheimnis ist (siehe \autoref{code:gen_prime}). Diese Primzahl wird für die nachfolgenden Berechnungen verwendet.
+Alle Berechnungen erfolgen wie auch zu Beginn in der mathematischen Veranschaulichung in einem endlichen Körper. Dieser wird definiert als $\mathbb{F}_p$, wobei $p$ eine Primzahl größer $n$ und $S$ ist. Die Bibliothek \textquote{libnum} stellt die Funktion \textquote{generate\_prime} bereit, die unter Eingabe einer Bitlänge die Primzahl in dieser Größenordnung erzeugt. Zur Erzeugung einer solchen Primzahl wird zunächst die Bitlänge von $S$ ermittelt und mit der Zahl $2$ multipliziert, um sicherzustellen, dass die generierte Primzahl der durch das BSI vorgegebenen Bedingung $p \geq max(2*r, n + 1)$, wobei $r$ die Bitlänge des Geheimnisses $S$ repräsentiert, entspricht \autocite[S. 66]{bsi-richtlinie-2023}. Diese Primzahl aus \autoref{code:gen_prime} für die nachfolgenden Berechnungen verwendet.
 
 \begin{lstlisting}[caption={Primzahl erzeugen},label=code:gen_prime,numbers=left]
-bit_length = libnum.len_in_bits(S_temp) + 8
+bit_length = max(2 * libnum.len_in_bits(S), 4)
 p = libnum.generate_prime(bit_length)
 
 assert p > S, "Primzahl kleiner als Geheimnis"
@@ -102,8 +102,10 @@ Nachdem alle Vorbereitungen abgeschlossen sind, wird im letzten Schritt das Gehe
 
 \begin{lstlisting}[caption={Shares erzeugen},label=code:create_shares,numbers=left]
 def create_shares(S, p):
-    m = int.from_bytes(os.urandom(32), byteorder="big") # Zufälliger Koeffizient
+    m = int.from_bytes(os.urandom(32), byteorder="big") # Pseudozufälliger Koeffizient
+    
     shares = []
+    
     for x in range(1, 4): # x aufsteigend iterieren
         y = (m * x + S) % p # y-Wert berechnen
         shares.append((x, y)) # Punkt hinzufügen
@@ -202,9 +204,9 @@ reconstructed_S = reconstruct_secret(user_shares, p)
 \end{lstlisting}
 
 \subsubsection{Prüfung auf Korrektheit}
-Auf das rekonstruierte Geheimnis wird im letzten Schritt die Hashfunktion SHA256 angewendet, um es mit dem Hashwert des ursprünglichen Geheimnisses vergleichen zu können. In \autoref{code:check_hashes} erfolgt im if-else-Block die Prüfung, ob beide ermittelten Hashwerte übereinstimmen. Wenn dies der Fall ist, bedeutet das, dass die Authentifizierung erfolgreich war.
+Auf das rekonstruierte Geheimnis wird im letzten Schritt die Hashfunktion SHA-256 angewendet, um es mit dem Hashwert des ursprünglichen Geheimnisses vergleichen zu können. In \autoref{code:check_hashes} erfolgt im if-else-Block die Prüfung, ob beide ermittelten Hashwerte übereinstimmen. Wenn dies der Fall ist, bedeutet das, dass die Authentifizierung erfolgreich war.
 
-\begin{lstlisting}[caption={Hashwerte überprüfen},label=code:check_hashes,numbers=right]
+\begin{lstlisting}[caption={Hashwerte überprüfen},label=code:check_hashes,numbers=left]
 reconstructed_S_hash = hash_string(str(reconstructed_S)).hexdigest()
 
 if reconstructed_S_hash == S_hash:

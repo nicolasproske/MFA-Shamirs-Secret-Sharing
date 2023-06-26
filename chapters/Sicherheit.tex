@@ -1,4 +1,39 @@
 \section{Relevante Sicherheitsaspekte}
-\lipsum[1]
+Die Implementierung dient dazu, die Idee hinter der Kombination von MFA und SSS anschaulich zu vermitteln. Aus diesem Grund werden dort bestimmte Sicherheitsaspekte außen vor gelassen, um den Quelltext übersichtlich und leicht verständlich zu halten. Im Folgenden wird daher auf relevante Kriterien eingegangen, die in einer Realisierung beachtet werden sollten.
 
-% Infos von BSI
+\subsection{Randomisierung zur Geheimniserzeugung}
+Das hier implementierte Geheimnis setzt sich einem Passwort, einem Fingerabdruck und einem zufällig generierten Wiederherstellungeschlüssel zusammen. Die darauf berechneten Hashwerte werden als Zahlen interpretiert und zufällig aneinandergereiht, wodurch sich das Geheimnis ergibt. Dieser Ansatz ist nur sicher, solange ein Angreifer keinen Zugriff auf alle Hashwerte (oder die Faktoren selbst oder eine Mischung aus beidem) hat. Da dies nur in der Theorie immer der Fall ist, müssen zusätzliche Sicherheitsebenen geschaffen werden, um das Geheimnis zu schützen. Ist ein Angreifer in Besitz aller Hashwerte, kann das Geheimnis so in wenigen Schritten rekonstruiert werden, da nach dem Prinzip von Kerckhoffs die Sicherheit eines Verfahren von der Geheimhaltung der Schlüssel, hier der Shares, abhängt und nicht von der Geheimhaltung des Algorithmus \textemdash{} Ein Angreifer kennt daher den Algorithmus und somit das Vorgehen zur Berechnung des Geheimnisses.\par
+
+Die Randomisierung ist im Beispiel dieser Implementierung in Form der zufälligen Aneinanderreihung der als Zahlen interpretierten Hashwerte angedeutet. Durch Ausprobieren benötigt ein Angreifer bei drei Zahlen im schlechtesten Fall jedoch nur sechs Versuche, um alle möglichen Kombinationen auszuprobieren und das Geheimnis zu erhalten. Für die erste Zahl gibt es $n$ Möglichkeiten, für die zweite Zahl (da die erste Zahl bereits ausgewählt wurde) $n-1$ Möglichkeiten und für die dritte Zahl (da bereits zwei Zahlen ausgewählt wurden) $n-2$ Möglichkeiten. Die Anzahl der Möglichkeiten für die drei gegebenen Faktoren beträgt dann $n * (n-1) * (n-2) = n! = 3! = 6$. Um dies zu verhindern, werden im Folgenden mögliche Lösungsansätze vorgeschlagen:
+
+\begin{enumerate}
+	\item Salt beim Hashing verwenden: Durch das Hinzufügen einer zufällig gewählten Zeichenfolge (Salt) an jeden Faktor ist es einem Angreifer nicht mehr möglich, den benötigten Hashwert nur auf Basis des Faktors (d. h. ohne Kenntnisse über den Salt) zu berechnen.
+	\item Zahlen mit Padding auffüllen: Aufgrund der Verwendung von SHA-256 entspricht der Hashwert und somit auch die daraus abgeleitete Zahl der Größenordnung von 256 Bit. Aus sicherheitstechnischen Gründen macht es durchaus Sinn, diese Bitlänge über das Hinzufügen eines Paddings zu erhöhen. Einem Angreifer ist es dadurch unmöglich, im Nachhinein das Geheimnis zu ermitteln, selbst wenn alle Faktoren bekannt sind. Zudem kann über ein Padding die Gesamtlänge des Geheimnisses gesteuert werden. Je länger das Geheimnis ist, desto größer muss die gewählte Primzahl sein. Auf die Bedingungen und Auswirkungen dieser Primzahl wird im nächsten Abschnitt eingegangen.
+\end{enumerate}
+
+Beim Thema Randomisierung ist zudem wichtig zu erwähnen, dass in einer realen Anwendung die Koeffizienten $m_i$ für $i > 0$ echt zufällig und entsprechend der Gleichverteilung aus $\mathbb{F}_p$ gewählt werden müssen (vgl. Zeile 2 in \autoref{code:create_shares}).
+
+\subsection{Wahl der richtigen Primzahl}
+Die Anforderung an die Primzahl $p \geq max(2*r, n + 1)$, wobei $r$ die Bitlänge des Geheimnisses $S$ repräsentiert, stellt sicher, dass das Sicherheitsniveau des Verfahrens mindestens die Bitlänge des zu schützenden Geheimnisses ist und $n$ Shares daraus erzeugt werden können. Weiter erreicht das Secret-Sharing-Schema von A. Shamir laut dem Bundesamt für Sicherheit in der Informationstechnik (BSI) informationstheoretische Sicherheit, was bedeutet, dass ein Angreifer mit unbegrenzten Ressourcen nicht in der Lage ist, das Geheimnis ohne Kenntnis über alle $k$ Shares zu rekonstruieren. Die Sicherheit des Verfahrens ist daher nur von der Geheimhaltung der Shares abhängig, daher muss "[j]egliche Kommunikation über die Teilgeheimnisse [...] verschlüsselt und authentisiert stattfinden, soweit es einem Angreifer physikalisch möglich ist, diese Kommunikation aufzuzeichnen oder zu manipulieren." \autocite[S. 66]{bsi-richtlinie-2023}.
+
+\subsection{Umgang mit kritischen Daten}
+Der Begriff \textquote{Umgang} bezieht sich insbesondere auf die Eingabe, Verarbeitung, Übertragung und Speicherung von schützenswerten Daten. Zu diesen kritischen Daten gehören:
+
+\begin{enumerate}
+	\item Faktoren (Passwort, Fingerabdruck und Wiederherstellungsschlüssel): Diese Daten werden für die Erstellung des Geheimnisses und zur Authentifizierung benötigt. Erhält ein Angreifer Zugang zu zwei der drei Informationen, kann dieser sich authentifizieren.
+	\item Geheimnis: Ähnlich wie bei den Faktoren ist auch das Geheimnis ein kritisches Datum. Durch Verwendung von $k-1$ Anteilen und des Geheimnisses ist es möglich, das Polynom eindeutig zu rekonstruieren. Zudem können mithilfe dieser Informationen alle restlichen Anteile generiert werden, sofern die $x$-Koordinaten bekannt sind. Falls jedoch weniger als $k-1$ Anteile vorhanden sind, lässt sich das Polynom selbst mit dem Geheimnis nicht rekonstruieren.
+	\item Shares: Wie im letzten Abschnitt bereits durch den BSI erwähnt, gilt es die Shares geheim zu halten. Um sicherzugehen, dass eine Nachricht nicht während der Übertragung von dem erwarteten Sender stammt und diese nicht auf dem Weg manipuliert wurde, können beispielsweise Message Authentication Codes (MAC) oder Signaturverfahren eingesetzt werden. 
+\end{enumerate}
+
+Bei all diesen Daten gilt es zu beachten, dass die damit verbundenen Informationen vor einer Übertragung oder Speicherung unkenntlich gemacht werden. Dies kann zum Beispiel durch die Anwendung einer Hashfunktion oder einer Verschlüsselung passieren.
+
+\subsection{Verwendung einer kryptographisch starken Hashfunktion}
+Die in der Implementierung verwendete Hashfunktion SHA-256 ist ein Beispiel einer kryptographisch starken Hashfunktion. Kryptographisch stark bedeutet laut einer Definition des BSI \autocite[S. 46]{bsi-richtlinie-2023}, dass es praktisch nicht möglich ist ...
+
+\begin{itemize}
+	\item ... für ein gegebenes $h \in \lbrace 0, 1 \rbrace ^n$ einen Wert $m \in \lbrace 0, 1 \rbrace ^*$ mit $H(m) = h$ zu finden (\textit{Einweg-Eigenschaft}).
+	\item ... für ein gegebenes $m \in \lbrace 0, 1 \rbrace ^*$ einen Wert $m' \in \lbrace 0, 1 \rbrace ^* \textbackslash \lbrace m \rbrace $ mit $H(m) = H(m')$ zu finden (\textit{2nd-Preimage-Eigenschaft}).
+	\item ... zwei Werte $m, m' \in \lbrace 0, 1 \rbrace ^*$ mit $m \neq m'$ und $H(m) = H(m')$ zu finden (\textit{Kollisionsresistenz}).
+\end{itemize}
+
+Weitere Hashfunktionen, die diese Eigenschaften nach heutigem Kennt­nis­stand erfüllen, sind SHA-256, SHA-512/256, SHA-384 und SHA-512 sowie die SHA-3-Familie ab SHA3-256 und können für eine Realisierung verwendet werden. Die Verwendung einer anderen Hashfunktion als SHA-256 wirkt sich auf die Laufzeit aus, da eine Verdopplung der Bitlänge (SHA-256 vs. SHA-512) der einzelnen Hashwerte auch zu einer Verdopplung der Bitlänge des Geheimnisses führt, wodurch die Bitlänge der zu berechnenden Primzahl ebenfalls doppelt so groß sein muss. Die konkreten Unterschiede werden im nächsten Kapitel genauer betrachtet.
