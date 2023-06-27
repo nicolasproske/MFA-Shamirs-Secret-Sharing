@@ -1,8 +1,44 @@
 \section{Anwendung in der digitalen Welt}
 Die Anwendung des Domain-Name-Systems (DNS) hat eine zentrale Bedeutung in der digitalen Welt erlangt, da es die Brücke zwischen menschenlesbaren Domainnamen wie \codeword{oth-aw.de} und maschinenlesbaren IP-Adressen wie \codeword{195.37.42.173} bildet. Ohne ausreichende Sicherheitsvorkehrungen besteht für einen Angreifer die Möglichkeit, sich als ein solches DNS-System auszugeben und eine falsche IP-Adresse für eine bestimmte Domain zurückzuliefern, was erhebliche Folgen haben kann. Um dies zu verhindern, nutzt die dafür verantwortliche Non-Profit-Organisation ICANN Kryptographie. ICANN greift dabei auf das Prinzip von Secret Sharing zurück, indem der Master-Schlüssel in insgesamt sieben Shares aufgeteilt und auf Smartcards an sieben Personen mit unterschiedlichen geografischen Standorten verteilt wird. Das dabei verwendete (5, 7)-Schwellenwertschema sagt aus, dass fünf der sieben Personen zusammenkommen müssen, um auf das Geheimnis, den Master-Schlüssel, zugreifen zu können \autocite{rosulek-icann-2017}. Dieses Anwendungsszenario zeigt das Vertrauen in Secret Sharing und bestätigt, dass sicherheitsrelevante Dienste von diesem Verfahren profitieren können.
 
-\subsection{Beispielanwendung im Web- und App-Bereich}
-Eine Besonderheit der obigen Implementierung ist, dass der Benutzer zu keinem Zeitpunkt direkten Zugriff auf die Shares hat. Jedes Share wird erst nach korrekten Eingabe des dazugehörigen Faktors freigegeben.
+\subsection{Beispiel anhand einer modernen Webanwendung}
+Eine Besonderheit der obigen Implementierung ist, dass der Benutzer zu keinem Zeitpunkt direkten Zugriff auf die Shares hat. Jeder Share wird erst nach der korrekten Eingabe des dazugehörigen Faktors freigegeben. In diesem Abschnitt wird eine mögliche Umsetzung dieses Konzepts unter Berücksichtigung solcher Besonderheiten beschreiben.\par
 
-% Zusammenspiel aus Webanwendung und App	
-%	- Szenario durchspielen (Nutzerregistrierung, Speicherung der Shares, Authentifizierung)
+Eines der Hauptmerkmale von Shamir's Secret Sharing ist es, dass bestenfalls $n$ Shares auf genauso viele Instanzen, zum Beispiel Personen, verteilt werden. Die Multi-Faktor-Authentifizierung sagt aus, dass ein Login-Prozess mit mehreren unabhängigen Zugangsdaten der Kategorien Wissen, Eigenheit und Besitz die Sicherheit dessen erhöht. Eine Kombination aus beiden Ansätzen ergibt das in dieser Studienarbeit beschriebene Verfahren: Drei Faktoren, ein Passwort (Wissen), ein Fingerabdruck (Eigenheit) und ein Wiederherstellungsschlüssel (Besitz), die sowohl für die Erzeugung der Shares als auch zur späteren Authentifizierung benötigt werden. Um dies als alltagstaugliches Verfahren umsetzen zu können, werden als Instanzen keine Personen, sondern unterschiedliche Systeme in Form einer Webanwendung mit einer dazugehörigen App eingesetzt. Der im Folgenden beschriebene Ablauf (Happy Path) bezieht sich daher auf die vollumfängliche Authentifizierung für eine Webanwendung.
+
+\subsubsection{Erstellung eines Kontos}
+Jeder Benutzer, der die Webanwendung verwenden möchte, benötigt ein Konto. Bei der Registrierung muss neben einer eindeutigen Kennung (z. B. E-Mail-Adresse oder Benutzername) nur ein Passwort (1. Faktor) festgelegt werden. Optional wird durch Plausibilitätsprüfungen sichergestellt, dass die Eingabe den Mindestanforderungen für sichere Passwörter \autocites{bsi-passwoerter-2023} entspricht:
+
+\begin{itemize}
+	\item Länge mindestens acht, besser zwölf, Zeichen
+	\item Vier verschiede Zeichenarten (Groß- und Kleinbuchstaben, Zahlen und Sonderzeichen)
+	\item Zufällige Aneinanderreihung der Zeichen
+\end{itemize}
+
+Nach Fertigstellung ist der Benutzer temporär auf der Webanwendung angemeldet und wird darauf hingewiesen, sich in der dazugehörigen App mit den eben festgelegten Zugangsdaten anzumelden. Zu diesem Zeitpunkt ist der Zugriff auf die Anwendung allerdings noch eingeschränkt.\par
+
+Die App muss nun auf dem Smartphone des Nutzers installiert und geöffnet sein. Nach dortiger Anmeldung mit E-Mail/Benutzername und Passwort wird der Benutzer aufgefordert, ein biometrisches Merkmal (2. Faktor), zum Beispiel einen Finger- oder Gesichtsabdruck, zu hinterlegen. Ist dieser Schritt erfolgt, wird abschließend ein zufälliger Wiederherstellungsschlüssel (3. Faktor) generiert und dem Benutzer angezeigt. Dieser hat die Möglichkeit, diesen entweder direkt abzuschreiben oder alternativ als QR-Code zu speichern (um diesen beispielsweise ausdrucken zu können). Nach der Bestätigung, dass der Wiederherstellungsschlüssel sicher abgelegt worden ist, muss dieser zur Verifikation erneut eingegeben werden. Danach ist der Login-Prozess aus Benutzersicht abgeschlossen.
+
+\subsubsection{Zuordnung und Speicherung der Shares}
+Im Hintergrund beginnt nach Abschluss der Verifikation des dritten Faktors die Generierung des Geheimnisses inklusive der Aufteilung in Shares, welche abschließend den einzelnen Faktoren zugewiesen werden. Aus Gründen der Übersichtlichkeit wird in diesem Beispiel davon ausgegangen, dass der erste Share mit dem ersten Faktor und so weiter kombiniert wird. Optional können die erzeugten Shares noch verschlüsselt werden, was allerdings bei einer korrekten Implementierung nicht zwingend erforderlich ist. Die privaten Schlüssel können dabei den zugewiesenen Faktoren entsprechen. Beispielsweise kann also der verschlüsselte Passwort-Share mit dem Passwort entschlüsselt werden.\par
+
+Die Hashwerte der einzelnen Faktoren können gemeinsam in einer Datenbank gespeichert werden. Einzelne Shares entgegen dürfen nie an dem gleichen Ort abgelegt sein, ansonsten besteht die Gefahr, dass ein Angreifer Zugriff auf zwei Shares gleichzeitig erlangt, welche ihn in dem hier verwendeten (2, 3)-Schwellenwertschema dazu ermächtigen, das Geheimnis rekonstruieren zu können. Die empfohlene Aufteilung zur Speicherung der Shares ist wie folgt:
+
+\begin{enumerate}
+	\item \textit{Passwort-Share:} Der zum Passwort zugewiesene Share wird in einer Datenbank abgelegt.
+	\item \textit{Biometrie-Share:} Der zum biometrischen Merkmal zugewiesene Share wird im sicheren Bereich des Smartphones abgelegt.
+	\item \textit{Wiederherstellungsschlüssel-Share:} Der zum Wiederherstellungsschlüssel zugewiesene Share wird an einem vom Benutzer festgelegten (sicheren) Ort abgelegt (z. B. als QR-Code ausgedruckt auf einem Blatt Papier in einem Bankschließfach).
+\end{enumerate}
+
+Sobald alle Faktoren gehasht gespeichert und die Shares an den dafür vorgesehenen Orten abgelegt worden sind, ist die Kontoerstellung vollständig abgeschlossen. Die Bestätigung an den Nutzer schaltet gleichzeitig den vollen Zugriff auf die Webanwendung frei.
+
+\subsubsection{Authentifizierung}
+Eine erneute Authentifizierung ist notwendig, sobald der Nutzer auf der Webanwendung abgemeldet ist und erneut darauf zugreifen möchte. Für die Anmeldung werden lediglich zwei der drei Faktoren benötigt, welche der Benutzer bei Beginn des Login-Prozesses beliebig auswählen kann.
+
+\begin{itemize}
+	\item \textit{Passwort}: Die Eingabe des Passworts ist nur über die Webanwendung möglich. Die Freigabe des Shares erfolgt, wenn das eingegebene gehashte Passwort mit dem Hashwert aus der Datenbank übereinstimmt.
+	\item \textit{Biometrisches Merkmal}: In der Webanwendung wird der Benutzer darauf hingewiesen, sich bitte in der App mit dem biometrischen Merkmal (Finger- oder Gesichtsabdruck) zu verifizieren. Bei Übereinstimmung mit dem Wert aus der Datenbank wird der Share freigegeben.
+	\item \textit{Wiederherstellungsschlüssel}: Dieser kann sowohl über die Webanwendung als auch über die App eingegeben werden. Somit kann sich der Nutzer noch immer authentifizieren, auch wenn kein Zugriff auf das  Die Eingabe per App bietet darüber hinaus allerdings noch die Möglichkeit, den QR-Code mittels der Kamera zu scannen, um eine schnellere Authentifizierung zu ermöglichen. Die Freigabe des Shares erfolgt nur, wenn der eingegebene gehashte Wiederherstellungsschlüssel mit dem Hashwert aus der Datenbank übereinstimmt.
+\end{itemize}
+
+Der Begriff \textquote{Freigabe} bedeutet in diesem Kontext, dass die Shares an eine zentrale Instanz \textquote{freigegeben} werden. Der Benutzer hat zu keinem Zeitpunkt Einsicht auf die konkreten Werte. Die erwähnte Instanz könnte beispielsweise an eine extra abgesicherte Schnittstelle zwischen der Webanwendung/App und der Datenbank sein, an die die Shares übertragen werden, welche sich dann um die Rekonstruktion des Geheimnisses kümmert. Falls die Wiederherstellung des Geheimnisses möglich ist und beide Hashwerte übereinstimmen, wird der Benutzer authentifiziert. Andernfalls wird der Prozess abgebrochen und der Benutzer darüber informiert.

@@ -46,9 +46,9 @@ All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt
 \label{fig:hash_factors}
 \end{figure}
 
-Zur Realisierung im Quelltext nimmt die in \autoref{code:hash_factors} gegebene Funktion \codeword{hash_string} einen String \codeword{value} entgegen. Dieser Wert wird zunächst mit \codeword{.encode()} als Bytes repräsentiert und unter Verwendung der \codeword{hashlib}-Bibliothek in einen SHA-256-Hash konvertiert. Nach Anwendung der Funktion auf die vom Nutzer eingegebenen Faktoren wird die \codeword{.digest()}-Methode auf den berechneten Hash angewendet, um das Ergebnis als Bytefolge zurückzugeben, um diese im nachfolgenden Schritt in eine ganze Zahl umwandeln zu können.
+Zur Realisierung im Quelltext nimmt die in \autoref{code:hash_factors} gegebene Funktion \codeword{hash_string} einen String \codeword{value} entgegen. Dieser Wert wird zunächst mit \codeword{.encode()} als Bytes repräsentiert und unter Verwendung der \codeword{hashlib}-Bibliothek in einen SHA-256-Hash konvertiert. Nach Anwendung der Funktion auf die vom Nutzer eingegebenen Faktoren wird die \codeword{.digest()}-Methode auf den berechneten Hash angewendet, um das Ergebnis als Bytefolge zurückzugeben, um diese im nachfolgenden Schritt in eine Zahl umwandeln zu können.
 
-\begin{lstlisting}[caption={Hashen der drei Faktoren},label=code:hash_factors,numbers=left]
+\begin{lstlisting}[caption={Hashen der drei Faktoren},label=code:hash_factors,numbers=right]
 def hash_string(value):
     return hashlib.SHA-256(value.encode())
 
@@ -70,9 +70,9 @@ recovery_key_number = hash_to_int(recovery_key_hash)
 \end{lstlisting}
 
 \subsubsection{Geheimnis erzeugen}
-Das Geheimnis ergibt sich nun durch die Aneinanderreihung aller Zahlen. Hierbei werden die Zahlen nicht addiert, sondern in zufälliger Reihenfolge konkateniert. In \autoref{code:concat_numbers} wird zuerst eine Liste \codeword{numbers} erstellt, die die Ganzzahlen aus \autoref{code:interpret_hashes} enthält. Anschließend wird die Liste durch Anwendung der \codeword{shuffle}-Methode aus der Bibliothek \textquote{random} zufällig durchmischt. Die so neu geordneten Zahlen werden in einer Schleife durchlaufen, jeder Wert in einen String umgewandelt und an den vorherigen Wert angehangen. Dieser zusammengesetzte String wird schlussendlich in einen Integer umgewandelt und als temporäre Variable \codeword{S} zwischengespeichert (siehe \autoref{code:concat_numbers}).
+Das Geheimnis ergibt sich nun durch die Aneinanderreihung aller drei generierten Zahlen. Hierbei werden die Zahlen nicht addiert, sondern in zufälliger Reihenfolge miteinander konkateniert. In \autoref{code:concat_numbers} wird zuerst eine Liste \codeword{numbers} erstellt, die die Ganzzahlen aus \autoref{code:interpret_hashes} enthält. Anschließend wird die Liste durch Anwendung der \codeword{shuffle}-Methode aus der Bibliothek \textquote{random} zufällig durchmischt. Die so neu angeordneten Zahlen werden in einer for-Schleife durchlaufen, jede Zahl aus der Liste in einen String umgewandelt und an den vorherigen Wert angehangen. Das Ergebnis ist ein zusammengesetzter String aus Ziffern. Dieser wird schlussendlich wieder in eine Ganzzahl umgewandelt und als temporäre Variable \codeword{S} zwischengespeichert (siehe \autoref{code:concat_numbers}). Der resultierende Integer \codeword{S} ist der endgültige, neu generierte geheime Wert, der nun für weitere Verarbeitungsschritte verwendet werden kann.
 
-\begin{lstlisting}[caption={Zahlen zu Geheimnis konkatenieren},label=code:concat_numbers,numbers=right]
+\begin{lstlisting}[caption={Zahlen zu Geheimnis konkatenieren},label=code:concat_numbers,numbers=left]
 numbers = [password_number, fingerprint_number, recovery_key_number]
 random.shuffle(numbers)
 S = int("".join(str(num) for num in numbers))
@@ -80,7 +80,7 @@ S = int("".join(str(num) for num in numbers))
 
 Um das Geheimnis während der Authentifizierung bei einer erfolgreichen Rekonstruktion auf Übereinstimmung prüfen zu können, muss es später abrufbar sein. Dazu wird es in \autoref{code:hash_secret} mit SHA-256 gehasht. Dadurch wird sichergestellt, dass das zu schützende Geheimnis für spätere Zwecke ohne Bedenken in einer Datenbank gespeichert werden kann.
 
-\begin{lstlisting}[caption={Geheimnis hashen},label=code:hash_secret,numbers=right]
+\begin{lstlisting}[caption={Geheimnis hashen},label=code:hash_secret,numbers=left]
 S_hash = hash_string(str(S)).hexdigest()
 \end{lstlisting}
 
@@ -100,7 +100,7 @@ assert p > S, "Primzahl kleiner als Geheimnis"
 \subsubsection{Shares erzeugen}
 Nachdem alle Vorbereitungen abgeschlossen sind, wird im letzten Schritt das Geheimnis in einzelne Shares zerlegt. Das verwendete (2, 3)-Schwellenwertschema erzeugt insgesamt drei Shares, wovon zwei zur Rekonstruktion benötigt werden. Die Funktion \codeword{create_shares(S, p)} in \autoref{code:create_shares} generiert eine Liste von Punkten, die für die Rekonstruktion des Geheimnisses im späteren Verlauf benötigt werden. Zu Beginn wird ein Koeffizient $m$ erzeugt, der als Ganzzahl aus 32 zufälligen Bytes interpretiert wird. Dieser Koeffizient wird im nächsten Schritt dazu verwendet, die y-Koordinaten der Punkte zu berechnen. Dafür wird über alle x-Werte von 1 bis einschließlich 3 iteriert und der dazugehörige y-Wert über $(m * x + S) \mod{p}$ berechnet, wobei $S$ das Geheimnis und $p$ die errechnete Primzahl ist. Jeder berechnete Punkt $(x_i, y_i)$ wird zur Liste \codeword{shares} hinzugefügt. Am Ende wird diese Liste, die die generierten Punkte beziehungsweise Shares enthält, zurückgegeben.
 
-\begin{lstlisting}[caption={Shares erzeugen},label=code:create_shares,numbers=left]
+\begin{lstlisting}[caption={Shares erzeugen},label=code:create_shares,numbers=right]
 def create_shares(S, p):
     m = int.from_bytes(os.urandom(32), byteorder="big") # Pseudozufälliger Koeffizient
     
@@ -130,7 +130,7 @@ Nachdem der Benutzer seine Eingabe getätigt hat, wird überprüft, ob die Eingabe 
 	\item Die dritte \codeword{assert}-Anweisung garantiert, dass der Benutzer zwei unterschiedliche Zahlen eingegeben hat. Wenn die beiden eingegebenen Zahlen identisch sind, wird eine Fehlermeldung mit dem Text \textquote{Bitte verwende zwei unterschiedliche Zahlen} angezeigt.
 \end{itemize}
 
-\begin{lstlisting}[caption={Faktoren auswählen},label=code:choose_factors,numbers=right]
+\begin{lstlisting}[caption={Faktoren auswählen},label=code:choose_factors,numbers=left]
 factors = list(map(int, input().split()))[:2]
 
 assert len(factors) == 2
@@ -155,18 +155,9 @@ Die in \autoref{code:input_new_factors} definierte for-Schleife ermöglicht es, ü
 user_shares = []
 
 for i in factors:
-    if i == 1:
-        print("\nBitte Passwort eingeben:")
-    elif i == 2:
-        print("\nBitte Fingerabdruck eingeben:")
-    elif i == 3:
-        print("\nBitte Wiederherstellungsschlüssel eingeben:")
+    # ...
 
-    user_input = input()
-
-    # Prüfung auf Übereinstimmung
-    if user_input == num_factors_map[i]:
-        # Eingabe stimmt mit ursprünglichem Wert überein, dazugehöriges Share zu Liste hinzufügen
+    if input() == num_factors_map[i]:
         user_shares.append(shares[i - 1])
 \end{lstlisting}
 

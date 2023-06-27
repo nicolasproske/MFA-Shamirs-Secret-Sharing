@@ -1,7 +1,5 @@
 % Praeamble
-\documentclass[conference,10pt,a4paper]{IEEEtran}
-
-%\usepackage[onehalfspacing]{setspace}
+\documentclass[a4paper]{IEEEtran}
 
 \usepackage[T1]{fontenc}
 \usepackage[ansinew]{inputenc}
@@ -71,30 +69,44 @@
 \addbibresource{assets/literature.bib}
 \renewcommand*{\bibfont}{\raggedright\small}
 
-\begin{document}
+\makeatletter
+\newcommand*\titleheader[1]{\gdef\@titleheader{#1}}
+\AtBeginDocument{%
+  \let\st@red@title\@title
+  \def\@title{%
+    \bgroup\normalfont\large\centering\@titleheader\par\egroup
+    \vskip1.5em\st@red@title}
+}
+\makeatother
 
 % Angaben
 \title{Analyse und Implementierung einer Multi-Faktor-Authentifizierung mit \\ Shamir's Secret Sharing}
+\titleheader{Moderne Anwendungen der Kryptographie im Sommersemester 2023}
 \author{
-	\IEEEauthorblockN{Nicolas Proske}
+	\IEEEauthorblockN{Nicolas Proske} \\
 	\IEEEauthorblockA{
 		\textit{Ostbayerische Technische Hochschule Amberg-Weiden} \\
-		Moderne Anwendungen der Kryptographie \\
 		E-Mail: \code{n.proske@oth-aw.de} \\
 		Matr.-Nr.: \code{87672270}
 	}
 }
 
+\begin{document}
+
 \maketitle
 
 % Abstract
 \begin{abstract}
-\lipsum[1]
+Heutige Authentifizierungsmethoden beruhen noch oft auf dem Ein-Faktor-Prinzip, wobei dieser eine Faktor, meist ein Passwort, die dahinter liegenden Daten nicht ausreichend vor unautorisiertem Zugriff schützen kann. Im Laufe der Zeit hat sich deshalb die Zwei-Faktor-Authentifizierung etabliert, welche zusätzlich ein weiteres Merkmal beim Login-Prozess voraussetzt. Diese Studienarbeit betrachtet darüber hinaus ein mögliches Verfahren, wie ein vollumfänglicher Login-Prozess mit mehreren Faktoren, verteilt auf unterschiedlichen Systemen, mit Hilfe von Multi-Faktor-Authentifizierung und Shamir's Secret Sharing realisiert werden kann.\par
+
+Die Kombination aus einem Passwort, einem biometrischen Merkmal (zum Beispiel einem Fingerabdruck) und einem Wiederherstellungsschlüssel erhöht nicht nur die Sicherheit eines Systems, sondern dank dem Einsatz von Secret Sharing auch die Flexibilität des Benutzers, da nur zwei der drei Faktoren zur Authentifizierung benötigt werden.\par
+
+Die Integration dieser Idee in eine Webanwendung in Verbindung mit einer dazugehörigen App zeigt eine sichere Möglichkeit auf, wie ein Login-Prozess in einer modernen Anwendung ablaufen kann.
 \end{abstract}
 
 % Schluesselwoerter
 \begin{IEEEkeywords}
-MFA, Secret Sharing
+Authentifizierung, Secret Sharing, Web, App
 \end{IEEEkeywords}
 
 \input{chapters/Einleitung}
