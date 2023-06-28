@@ -26,12 +26,13 @@
 \definecolor{codegray}{rgb}{0.5, 0.5, 0.5}
 \definecolor{darkgray}{rgb}{0.3, 0.3, 0.3}
 \definecolor{backcolor}{RGB}{247, 247, 247}
+\definecolor{othorange}{HTML}{f29400}
 
 \lstset{
     language=Python,
     basicstyle=\linespread{1.2}\ttfamily\footnotesize,
-    keywordstyle=\color{blue}\ttfamily,
-    stringstyle=\color{codegray}\ttfamily,
+    keywordstyle=\ttfamily,
+    stringstyle=\color{codegray}\ttfamily\textit,
     commentstyle=\color{teal}\ttfamily,
     morecomment=[l][\color{teal}]{\#},
     backgroundcolor=\color{backcolor},
@@ -60,6 +61,10 @@
 \tikzstyle{decision} = [diamond, draw, text centered]
 \tikzstyle{data}=[trapezium, draw, text centered, trapezium left angle=60, trapezium right angle=120, minimum height=1.5em]
 \tikzstyle{connector} = [draw, -latex']
+
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usetikzlibrary{decorations.pathmorphing}
 
 \renewcommand\IEEEkeywordsname{Schlüsselwörter}
 \def\code#1{\texttt{#1}}

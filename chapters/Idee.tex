@@ -5,10 +5,10 @@ Das Ziel dieser Studienarbeit besteht darin, die Vorteile beider Verfahren zu ko
 \centering
 \begin{tikzpicture}
 
-\node [data, fill=gray!10] at (0,-1) (input_factors) {Nutzer legt drei Faktoren fest};
-\node [process, fill=gray!10] at (0,-2) (transform_factors) {Faktoren in Geheimnis umwandeln};
-\node [process, fill=gray!10] at (0,-3) (gen_shares) {Geheimnis in Shares aufteilen};
-\node [process, fill=gray!10] at (0,-4) (store_shares) {Shares verteilt speichern};
+\node [data, fill=gray!20] at (0,-1) (input_factors) {Nutzer legt drei Faktoren fest};
+\node [process, fill=gray!20] at (0,-2) (transform_factors) {Faktoren in Geheimnis umwandeln};
+\node [process, fill=gray!20] at (0,-3) (gen_shares) {Geheimnis in Shares aufteilen};
+\node [process, fill=gray!20] at (0,-4) (store_shares) {Shares verteilt speichern};
 
 \path [connector] (input_factors) -- (transform_factors);
 \path [connector] (transform_factors) -- (gen_shares);
@@ -27,16 +27,16 @@ Nachdem alle Shares erfolgreich generiert wurden und gespeichert sind, kann sich
 \centering
 \begin{tikzpicture}
 
-\node [data, fill=gray!10] at (0,-1) (def_factors) {Nutzer wählt zwei Faktoren aus};
-\node [data, fill=gray!10] at (0,-2) (input_factors) {Nutzer gibt Faktoren ein};
-\node [process, fill=gray!10] at (0,-3) (recon_shares) {Geheimnis rekonstruieren};
-\node [decision, fill=gray!10] at (0,-5) (correct) {Korrekt?};
+\node [data, fill=gray!20] at (0,-1) (def_factors) {Nutzer wählt zwei Faktoren aus};
+\node [data, fill=gray!20] at (0,-2) (input_factors) {Nutzer gibt Faktoren ein};
+\node [process, fill=gray!20] at (0,-3) (recon_shares) {Geheimnis rekonstruieren};
+\node [decision, fill=gray!20] at (0,-5) (correct) {Korrekt?};
 
 \node[draw=none] at (1.625, -4.75) (no) {Nein};
 \node[draw=none] at (0.35, -6.25) (yes) {Ja};
 
-\node [process, fill=red!30] at (3,-5) (error) {Fehler};
-\node [process, fill=green!30] at (0,-7) (success) {Authentifiziert};
+\node [process, fill=red!20] at (3,-5) (error) {Fehler};
+\node [process, fill=green!20] at (0,-7) (success) {Authentifiziert};
 
 \path [connector] (def_factors) -- (input_factors);
 \path [connector] (input_factors) -- (recon_shares);
