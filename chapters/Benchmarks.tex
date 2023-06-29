@@ -12,14 +12,14 @@ Alle Messungen werden auf Basis des bestehenden Quellcodes mit Hilfe der \textqu
 
 Wie \autoref{code:measure_time} zeigt, werden die Ergebnisse dabei in Nanosekunden ausgegeben.
 
-\begin{lstlisting}[caption={Allgemeine Messung},label=code:measure_time,numbers=left]
+\begin{lstlisting}[caption={Vorgehen bei einer Zeitmessung},label=code:measure_time,numbers=left]
 start_time = time.time_ns()
 # ...
 end_time = time.time_ns()
 print(end_time - start_time)
 \end{lstlisting}
 
-Die Parameter für Passwort, Fingerabdruck und Wiederherstellungsschlüssel sind bei jedem Durchgang identisch und entsprachen folgenden Werten:
+Die Parameter für Passwort, Fingerabdruck und Wiederherstellungsschlüssel sind bei jedem Durchgang identisch und entsprechen folgenden Werten:
     
 \begin{itemize}
 	\item \textit{Passwort:} 40iOMv9X!*R+
@@ -29,7 +29,7 @@ Die Parameter für Passwort, Fingerabdruck und Wiederherstellungsschlüssel sind b
 
 \subsection{Messung des Ist-Stands}
 
-Um eine Vergleichsbasis zu schaffen werden zuerst Zeitmessungen ohne Anpassungen am Code durchgeführt. Mit Blick auf \autoref{chart:measure_ist} lässt sich ein deutlicher Unterschied zwischen den gemessenen Werten erkennen. Besonders sticht dabei die Berechnung der Primzahl heraus, welche durchschnittlich über 1,5 Sekunden lang dauert. Während der Durchführung ist aufgefallen, dass die Primzahlberechnung trotz identischer Eingabeparameter stark schwankt und dabei Zeitaufwände zwischen 0,55 und 3,7 Sekunden benötigt hat.\par
+Um eine Vergleichsbasis zu schaffen, werden zuerst Zeitmessungen ohne Anpassungen am Code durchgeführt. Mit Blick auf \autoref{chart:measure_ist} lässt sich ein deutlicher Unterschied zwischen den gemessenen Werten erkennen. Besonders sticht dabei die Berechnung der Primzahl heraus, welche durchschnittlich über 1,5 Sekunden lang dauert. Während der Durchführung ist aufgefallen, dass die Primzahlberechnung trotz identischer Eingabeparameter stark schwankt und dabei Zeitaufwände zwischen 0,55 und 3,7 Sekunden benötigt.\par
 Alle anderen Zeiten bewegen sich im Bereich von Bruchteilen einer Sekunde mit Werten von 0.000067 Sekunden (GEN) bis 0.00012 Sekunden (HAS). Die Erzeugung der Shares verläuft dabei am schnellsten.
 
 \begin{figure}[!h]
@@ -38,9 +38,9 @@ Alle anderen Zeiten bewegen sich im Bereich von Bruchteilen einer Sekunde mit We
 \begin{axis}[
     every axis plot post/.style={/pgf/number format/fixed, /pgf/number format/1000 sep={.}},
     ybar=5pt,
-    bar width=12pt,
+    bar width=10pt,
     width=\linewidth,
-    height=5cm,
+    height=6cm,
     ymin=0,
     axis on top,
     ymax=150000,
@@ -58,23 +58,26 @@ Alle anderen Zeiten bewegen sich im Bereich von Bruchteilen einer Sekunde mit We
         \pgfmathprintnumber{\rawy} % Print unclipped values
     },
     every node near coord/.append style={font=\footnotesize},
+    nodes near coords align={vertical},
+    nodes near coords style={rotate=90, anchor=west},
     axis lines*=left,
     clip=false
     ]
-\addplot coordinates {(HAS, 116500) (NUM, 87300) (PRI, 1507864900) (GEN, 66600)};
+\addplot[fill=cyan] coordinates {(HAS, 116500) (NUM, 87300) (PRI, 1507864900) (GEN, 66600)};
+\legend{SHA-256}
 \end{axis}
 \end{tikzpicture}
 \caption{Ergebnis: Messung des Ist-Stands}
 \label{chart:measure_ist}
 \end{figure}
 
-\subsection{Messung mit SHA-512}
+\subsection{Messung mit 512 Bit}
 
 Anstatt SHA-256 wird nun SHA-512 als Hashfunktion für den gesamten Prozess verwendet. Die Eingabeparameter bleiben unverändert. Eine Umstellung von 256 Bit auf 512 Bit bewirkt sowohl eine Verdopplung der Bitlänge aller Hashwerte als auch eine Verdopplung der Bitlänge des Geheimnisses. Auf diesem Geheimnis erfolgt die Berechnung der Primzahl, welche sich unter Verwendung von SHA-256 in der Regel in einer Größenordnung von 1536 Bit ($3 \text{ \textit{(Faktoren)} } * 256 \text{ \textit{(Bit)} } * 2$) bewegt und nun durch SHA-512 auf $3072$ Bit anwächst.\par
 
-Diese Veränderungen spielgen sich in den Zeitmessungen wider, welche in \autoref{chart:measure_sha512} mit den vorherigen Ergebnissen gegenübergestellt werden. Allgemein ist wie erwartet eine steigende Tendenz aller Zeiten zu erkennen. Eine auffallend schlechtere Performance ist bei der Berechnung der Shares und der Erzeugung der Primzahl zu verzeichnen. Ersteres benötigt mit SHA-512 mehr als doppelt so lange, bei der Primzahl verzehnfacht sich sogar die Zeit, die durchschnittlich während diesen Prozesses verstreicht. In Zahlen ausgedrückt bedeutet dieser Anstieg eine längere Wartezeit von 12,43 Sekunden im Vergleich zu vorher.\par
+Diese Veränderungen spiegeln sich in den Zeitmessungen wider, welche in \autoref{chart:measure_512} mit den vorherigen Ergebnissen gegenübergestellt werden. Allgemein ist wie erwartet eine steigende Tendenz aller Zeiten zu erkennen. Eine auffallend schlechtere Performance ist bei der Berechnung der Shares und der Erzeugung der Primzahl zu verzeichnen. Ersteres benötigt mit SHA-512 mehr als doppelt so lange, bei der Primzahl verzehnfacht sich sogar die Zeit, die durchschnittlich während dieses Prozesses verstreicht. In Zahlen ausgedrückt bedeutet dieser Anstieg eine längere Wartezeit von 12,43 Sekunden im Vergleich zu vorher.\par
 
-Es lässt sich also festhalten, dass die Wahl der Hashfunktion einen essenziellen Einfluss auf die Performance des vorgestellten Verfahrens hat. Bei höheren Anforderungen an die langfristige Sicherheit des Systems ist dementsprechend in Erwägung zu ziehen, die neuere SHA-3 (Keccak) Hashfunktion einzusetzen. In weitergehenden Tests konnten allerdings keine erwähnenswerten Performanceverbesserungen durch die Verwendnung von SHA-3-256 anstelle von SHA-256 festgestellt werden.
+Es lässt sich also festhalten, dass die Wahl der Hashfunktion einen essenziellen Einfluss auf die Performance des vorgestellten Verfahrens hat. Bei höheren Anforderungen an die langfristige Sicherheit des Systems ist dementsprechend in Erwägung zu ziehen, die neuere SHA-3 (Keccak) Hashfunktion einzusetzen, anstatt die Bits auf 512 zu erhöhen. In weitergehenden Tests konnten allerdings keine erwähnenswerten Performanceverbesserungen durch die Verwendnung von SHA-3-512 anstelle von SHA-2-512 festgestellt werden.
 
 \begin{figure}[!h]
 \centering
@@ -82,7 +85,7 @@ Es lässt sich also festhalten, dass die Wahl der Hashfunktion einen essenziellen
 \begin{axis}[
     every axis plot post/.style={/pgf/number format/fixed, /pgf/number format/1000 sep={.}},
     ybar=5pt,
-    bar width=12pt,
+    bar width=10pt,
     width=\linewidth,
     height=6cm,
     ymin=0,
@@ -106,15 +109,16 @@ Es lässt sich also festhalten, dass die Wahl der Hashfunktion einen essenziellen
     nodes near coords style={rotate=90, anchor=west},
     axis lines*=left,
     clip=false,
-    legend style={at={(axis description cs:0.45,1.2)}, anchor=north east}
+    legend style={at={(axis description cs:0.45,1.25)}, anchor=north east}
     ]
-\addplot coordinates {(HAS, 116500) (NUM, 87300) (PRI, 1507864900) (GEN, 66600)};
-\addplot coordinates {(HAS, 154000) (NUM, 96600) (PRI, 13942158400) (GEN, 172100)};
-\legend{SHA-256, SHA-512}
+\addplot[fill=cyan] coordinates {(HAS, 116500) (NUM, 87300) (PRI, 1507864900) (GEN, 66600)};
+\addplot[fill=othorange] coordinates {(HAS, 154000) (NUM, 96600) (PRI, 13942158400) (GEN, 172100)};
+\addplot[fill=purple] coordinates {(HAS, 119100) (NUM, 87800) (PRI, 16579200800) (GEN, 173000)};
+\legend{SHA-256, SHA-512, SHA3-512}
 \end{axis}
 \end{tikzpicture}
-\caption{Ergebnis: Messung mit SHA-512}
-\label{chart:measure_sha512}
+\caption{Ergebnis: Messung mit 512 Bit}
+\label{chart:measure_512}
 \end{figure}
 
 % Ausprobieren:

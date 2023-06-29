@@ -5,10 +5,10 @@ Das Ziel dieser Studienarbeit besteht darin, die Vorteile beider Verfahren zu ko
 \centering
 \begin{tikzpicture}
 
-\node [data, fill=gray!20] at (0,-1) (input_factors) {Nutzer legt drei Faktoren fest};
-\node [process, fill=gray!20] at (0,-2) (transform_factors) {Faktoren in Geheimnis umwandeln};
-\node [process, fill=gray!20] at (0,-3) (gen_shares) {Geheimnis in Shares aufteilen};
-\node [process, fill=gray!20] at (0,-4) (store_shares) {Shares verteilt speichern};
+\node [data] at (0,-1) (input_factors) {Nutzer legt drei Faktoren fest};
+\node [process] at (0,-2) (transform_factors) {Faktoren in Geheimnis umwandeln};
+\node [process] at (0,-3) (gen_shares) {Geheimnis in Shares aufteilen};
+\node [process] at (0,-4) (store_shares) {Shares verteilt speichern};
 
 \path [connector] (input_factors) -- (transform_factors);
 \path [connector] (transform_factors) -- (gen_shares);
@@ -19,24 +19,24 @@ Das Ziel dieser Studienarbeit besteht darin, die Vorteile beider Verfahren zu ko
 \label{fig:ueberblick_gen_shares}
 \end{figure}
 
-\autoref{fig:ueberblick_gen_shares} zeigt den groben Ablauf, wie die Shares erzeugt werden. Im Kern wird ein Geheimnis aus mehreren Authentifizierungsfaktoren generiert und mithilfe von Shamir's Secret Sharing aufgeteilt. Die zur Multi-Faktor-Authentifizierung verwendeten Faktoren entsprechen einem Passwort (Wissen), dem Fingerabdruck des Nutzers (Eigenheit) und einem Wiederherstellungsschlüssel in Form eines QR-Codes (Besitz). Die Kombination aller drei Faktoren dient als Grundlage zur Berechnung des Geheimnisses, welches anschließend mittels Shamir's Secret Sharing in drei Shares aufgeteilt wird, wobei nur zwei Stück zur späteren Authentifizierung benötigt werden. Jeder Share wird anschließend eindeutig zu einem der obigen Faktoren zugeordnet und auf unterschiedlichen Wegen sicher abgelegt, zum Beispiel der Passwort-Share in einer Datenbank, der Fingerabdruck-Share im sicheren Bereich eines Smartphones und der zugehörige Share zum Wiederherstellungsschlüssel als QR-Code ausgedruckt an einem sicheren Ort.\par
+\autoref{fig:ueberblick_gen_shares} zeigt den groben Ablauf, wie die Shares erzeugt werden. Im Kern wird ein Geheimnis aus mehreren Authentifizierungsfaktoren generiert und mit Hilfe von Shamir's Secret Sharing aufgeteilt. Die zur Multi-Faktor-Authentifizierung verwendeten Faktoren entsprechen einem Passwort (Wissen), dem Fingerabdruck des Nutzers (Eigenheit) und einem Wiederherstellungsschlüssel in Form eines QR-Codes (Besitz). Die Kombination aller drei Faktoren dient als Grundlage zur Berechnung des Geheimnisses, welches anschließend mittels Shamir's Secret Sharing in drei Shares aufgeteilt wird, wobei nur zwei Stück zur späteren Authentifizierung benötigt werden. Jeder Share wird anschließend eindeutig zu einem der obigen Faktoren zugeordnet und auf unterschiedlichen Wegen sicher abgelegt, zum Beispiel der Passwort-Share in einer Datenbank, der Fingerabdruck-Share im sicheren Bereich eines Smartphones und der zugehörige Share zum Wiederherstellungsschlüssel als QR-Code ausgedruckt an einem sicheren Ort.\par
 
-Nachdem alle Shares erfolgreich generiert wurden und gespeichert sind, kann sich der Nutzer mit zwei der drei zu Beginn festgelegten Faktoren authentifizieren. Mit Blick auf \autoref{fig:ueberblick_auth_shares} wählt der Nutzer zu Beginnn aus, welche zwei Faktoren er dazu verwenden möchte. Nach Eingabe eines korrekten Faktores gibt das System den verknüpften Share frei, welcher im Anschluss zur Rekonstruktion verwendet wird. Sobald beide Shares zur Verfügung stehen wird das Geheimnis wiederhergestellt und überprüft, ob der Wert dem ursprünglichen Geheimnis entspricht. Falls ja, ist die Authentifizierung erfolgreich, andernfalls erhält der Nutzer eine Fehlermeldung.
+Nachdem alle Shares erfolgreich generiert wurden und gespeichert sind, kann sich der Nutzer mit zwei der drei zu Beginn festgelegten Faktoren authentifizieren. Mit Blick auf \autoref{fig:ueberblick_auth_shares} wählt der Nutzer anfangs aus, welche zwei Faktoren er dazu verwenden möchte. Nach Eingabe eines korrekten Faktors gibt das System den verknüpften Share \textquote{frei}, welcher im Anschluss zur Rekonstruktion verwendet wird. Sobald beide Shares zur Verfügung stehen wird das Geheimnis wiederhergestellt und überprüft, ob der Wert dem ursprünglichen Geheimnis entspricht. Falls ja, ist die Authentifizierung erfolgreich, andernfalls erhält der Nutzer eine Fehlermeldung.
 
 \begin{figure}[!h]
 \centering
 \begin{tikzpicture}
 
-\node [data, fill=gray!20] at (0,-1) (def_factors) {Nutzer wählt zwei Faktoren aus};
-\node [data, fill=gray!20] at (0,-2) (input_factors) {Nutzer gibt Faktoren ein};
-\node [process, fill=gray!20] at (0,-3) (recon_shares) {Geheimnis rekonstruieren};
-\node [decision, fill=gray!20] at (0,-5) (correct) {Korrekt?};
+\node [data] at (0,-1) (def_factors) {Nutzer wählt zwei Faktoren aus};
+\node [data] at (0,-2) (input_factors) {Nutzer gibt Faktoren ein};
+\node [process] at (0,-3) (recon_shares) {Geheimnis rekonstruieren};
+\node [decision] at (0,-5) (correct) {Korrekt?};
 
 \node[draw=none] at (1.625, -4.75) (no) {Nein};
 \node[draw=none] at (0.35, -6.25) (yes) {Ja};
 
-\node [process, fill=red!20] at (3,-5) (error) {Fehler};
-\node [process, fill=green!20] at (0,-7) (success) {Authentifiziert};
+\node [process] at (3,-5) (error) {Fehler};
+\node [process] at (0,-7) (success) {Authentifiziert};
 
 \path [connector] (def_factors) -- (input_factors);
 \path [connector] (input_factors) -- (recon_shares);

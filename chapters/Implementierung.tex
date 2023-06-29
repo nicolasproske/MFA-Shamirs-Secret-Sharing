@@ -10,9 +10,14 @@ Vor der Durchführung einer Authentifizierung ist es notwendig, die dafür benötig
 Bei den Faktoren handelt es sich um ein Passwort, einen Fingerabdruck und einen Wiederherstellungsschlüssel. Wie in \autoref{code:input_factors} gezeigt, werden die ersten beiden Faktoren vom Nutzer bereitgestellt, während der dritte Faktor zufällig in Form eines 128 Bit langen hexadezimalen Strings generiert wird.
 
 \begin{lstlisting}[caption={Initialisierung der drei Faktoren},label=code:input_factors,numbers=left]
-password = input() # 1. Faktor
-fingerprint = input() # 2. Faktor
-recovery_key = os.urandom(16).hex() # 3. Faktor
+# 1. Faktor: Passwort
+password = input()
+
+# 2. Faktor: Fingerabdruck
+fingerprint = input()
+
+# 3. Faktor: Wiederherstellungsschlüssel
+recovery_key = os.urandom(16).hex()
 \end{lstlisting}
 
 \subsubsection{Faktoren umwandeln}
@@ -22,13 +27,13 @@ All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt
 \centering
 \begin{tikzpicture}
 
-\node [data, fill=orange!20] at (-2.5,0) (password) {Passwort};
-\node [data, fill=blue!20] at (-0,0) (fingerprint) {Fingerabdruck};
-\node [data, fill=green!20] at (2.5,0) (recovery_key) {Schlüssel};
-\node [data, fill=gray!20] at (0,-1.25) (hash_factors) {SHA-256-Hash};
-\node [data, fill=orange!20] at (-2.5,-2.25) (password_hash) {807A09...};
-\node [data, fill=blue!20] at (-0,-3) (fingerprint_hash) {8587EC...};
-\node [data, fill=green!20] at (2.5,-2.25) (recovery_key_hash) {39B997...};
+\node [data, fill=cyan] at (-2.5,0) (password) {Passwort};
+\node [data, fill=othorange] at (-0,0) (fingerprint) {Fingerabdruck};
+\node [data, fill=purple] at (2.5,0) (recovery_key) {Schlüssel};
+\node [data] at (0,-1.25) (hash_factors) {SHA-256-Hash};
+\node [data, fill=cyan] at (-2.5,-2.25) (password_hash) {807A09...};
+\node [data, fill=othorange] at (-0,-3) (fingerprint_hash) {8587EC...};
+\node [data, fill=purple] at (2.5,-2.25) (recovery_key_hash) {39B997...};
 
 \node[draw=none] at (-3.25, -0.75) {W@6a...};
 \node[draw=none] at (0.6, -0.625) {1011...};
@@ -46,7 +51,7 @@ All diese Faktoren werden im späteren Verlauf für die Authentifizierung benötigt
 \label{fig:hash_factors}
 \end{figure}
 
-Zur Realisierung im Quelltext nimmt die in \autoref{code:hash_factors} gegebene Funktion \codeword{hash_string} einen String \codeword{value} entgegen. Dieser Wert wird zunächst mit \codeword{.encode()} als Bytes repräsentiert und unter Verwendung der \codeword{hashlib}-Bibliothek in einen SHA-256-Hash konvertiert. Nach Anwendung der Funktion auf die vom Nutzer eingegebenen Faktoren wird die \codeword{.digest()}-Methode auf den berechneten Hash angewendet, um das Ergebnis als Bytefolge zurückzugeben, um diese im nachfolgenden Schritt in eine Zahl umwandeln zu können.
+Zur Realisierung im Quelltext nimmt die in \autoref{code:hash_factors} gegebene Funktion \codeword{hash_string} einen String \codeword{value} entgegen. Dieser Wert wird zunächst mit \codeword{.encode()} als Bytes repräsentiert und unter Verwendung der \codeword{hashlib}-Bibliothek in einen SHA-256-Hash konvertiert. Nach Anwendung der Funktion auf alle gegebenen Faktoren wird die \codeword{.digest()}-Methode auf den berechneten Hash angewendet, um das Ergebnis als Bytefolge zurückzugeben, um diese im nachfolgenden Schritt in eine Zahl umwandeln zu können.
 
 \begin{lstlisting}[caption={Hashen der drei Faktoren},label=code:hash_factors,numbers=right]
 def hash_string(value):
@@ -88,10 +93,10 @@ S_hash = hash_string(str(S)).hexdigest()
 Das originale, nicht gehashte Geheimnis \codeword{S} wird in der zweiten Phase dazu benötigt, um es mit Hilfe von Shamir's Secret Sharing in einzelne Shares zu zerlegen.
 
 \subsubsection{Primzahl erzeugen}
-Alle Berechnungen erfolgen wie auch zu Beginn in der mathematischen Veranschaulichung in einem endlichen Körper. Dieser wird definiert als $\mathbb{F}_p$, wobei $p$ eine Primzahl größer $n$ und $S$ ist. Die Bibliothek \textquote{libnum} stellt die Funktion \textquote{generate\_prime} bereit, die unter Eingabe einer Bitlänge die Primzahl in dieser Größenordnung erzeugt. Zur Erzeugung einer solchen Primzahl wird zunächst die Bitlänge von $S$ ermittelt und mit der Zahl $2$ multipliziert, um sicherzustellen, dass die generierte Primzahl der durch das BSI vorgegebenen Bedingung $p \geq max(2*r, n + 1)$, wobei $r$ die Bitlänge des Geheimnisses $S$ repräsentiert, entspricht \autocite[S. 66]{bsi-richtlinie-2023}. Diese Primzahl aus \autoref{code:gen_prime} für die nachfolgenden Berechnungen verwendet.
+Alle Berechnungen erfolgen wie auch zu Beginn in der mathematischen Veranschaulichung in einem endlichen Körper. Dieser wird definiert als $\mathbb{F}_p$, wobei $p$ eine Primzahl größer $n$ und $S$ ist. Die Bibliothek \textquote{libnum} stellt die Funktion \textquote{generate\_prime} bereit, die unter Eingabe einer Bitlänge die Primzahl in dieser Größenordnung erzeugt. Zur Erzeugung einer solchen Primzahl wird zunächst die Bitlänge von $S$ ermittelt und mit der Zahl $2$ multipliziert, um sicherzustellen, dass die generierte Primzahl der durch das BSI vorgegebenen Bedingung $p \geq max(2*r, n + 1)$, wobei $r$ die Bitlänge des Geheimnisses $S$ repräsentiert, entspricht \autocite[S. 66]{bsi-richtlinie-2023}. Die Primzahl aus \autoref{code:gen_prime} wird für die nachfolgenden Berechnungen verwendet.
 
 \begin{lstlisting}[caption={Primzahl erzeugen},label=code:gen_prime,numbers=left]
-bit_length = max(2 * libnum.len_in_bits(S), 4)
+bit_length = max(2 * libnum.len_in_bits(S), 3+1)
 p = libnum.generate_prime(bit_length)
 
 assert p > S, "Primzahl kleiner als Geheimnis"
@@ -149,7 +154,7 @@ num_factors_map = {
 }
 \end{lstlisting}
 
-Die in \autoref{code:input_new_factors} definierte for-Schleife ermöglicht es, über die Liste der vom Benutzer ausgewählten Faktoren zu iterieren. Je nachdem, welche Zahlen der Nutzer im letzten Schritt gewählt hat, wird er nun dazu aufgefordet, den dazugehörigen Wert einzugeben. Falls die Faktoren beispielsweise den Werten 1 und 3 entsprechen, muss der Benutzer nacheinander sein zu Beginn festgelegtes Passwort (1) und den Wiederherstellungsschlüssel (3) eingeben. Anschließend erfolgt eine Überprüfung mit \codeword{if user_input == num_factors_map[i]}, um festzustellen, ob die Eingabe des Benutzers mit dem gespeicherten Wert des entsprechenden Authentifizierungsfaktors übereinstimmt. Ist dies der Fall, wird der zugehörige Share zur Liste \codeword{user_shares} hinzugefügt. Wenn die Eingabe nicht übereinstimmt, wird eine Fehlermeldung angezeigt und der Authentifizierungsprozess abgebrochen.
+Die in \autoref{code:input_new_factors} definierte for-Schleife ermöglicht es, über die Liste der vom Benutzer ausgewählten Faktoren zu iterieren. Je nachdem, welche Zahlen der Nutzer im letzten Schritt gewählt hat, wird er nun dazu aufgefordet, den dazugehörigen Wert einzugeben. Falls die Faktoren beispielsweise den Werten 1 und 3 entsprechen, muss der Benutzer nacheinander sein zu Beginn festgelegtes Passwort (1) und den Wiederherstellungsschlüssel (3) eingeben. Anschließend erfolgt eine Überprüfung mit \codeword{if input() == num_factors_map[i]}, um festzustellen, ob die Eingabe des Benutzers mit dem gespeicherten Wert des entsprechenden Authentifizierungsfaktors übereinstimmt. Ist dies der Fall, wird der zugehörige Share zur Liste \codeword{user_shares} hinzugefügt. Wenn die Eingabe nicht übereinstimmt, wird eine Fehlermeldung angezeigt und der Authentifizierungsprozess abgebrochen.
 
 \begin{lstlisting}[caption={Eingabe der Faktoren},label=code:input_new_factors,numbers=left]
 user_shares = []

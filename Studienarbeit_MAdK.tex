@@ -16,7 +16,7 @@
 \usepackage[figure]{hypcap}
 
 \usepackage{listings}
-\usepackage{xcolor}
+\usepackage[dvipsnames]{xcolor}
 
  % Tabelle
 \usepackage{tabularx}
@@ -32,9 +32,9 @@
     language=Python,
     basicstyle=\linespread{1.2}\ttfamily\footnotesize,
     keywordstyle=\ttfamily,
-    stringstyle=\color{codegray}\ttfamily\textit,
-    commentstyle=\color{teal}\ttfamily,
-    morecomment=[l][\color{teal}]{\#},
+    stringstyle=\color{codegray}\ttfamily,
+    commentstyle=\color{codegray}\ttfamily,
+    morecomment=[l][\color{codegray}]{\#},
     backgroundcolor=\color{backcolor},
     rulecolor=\color{codegray},
     showspaces=false,
@@ -122,6 +122,7 @@ Authentifizierung, Secret Sharing, Web, App
 \input{chapters/Sicherheit}
 \input{chapters/Benchmarks}
 \input{chapters/Digitale_Anwendung}
+\input{chapters/Zusammenfassung}
 
 % Literaturverzeichnis
 \printbibliography
